@@ -23,11 +23,20 @@
   tags:
     - install-zfs-packages
   block:
-    - name: Add backports repository into sources list
+    - name: Remove default debian source list
+      ansible.builtin.file:
+        name: /etc/apt/sources.list.d/debian.sources
+        state: absent
+
+    - name: Add contrib non-free-firmware repositories into sources list
       ansible.builtin.apt_repository:
-        repo: deb http://deb.debian.org/debian/ bookworm-backports main contrib non-free-firmware
+        repo: deb http://deb.debian.org/debian/ {{ item.dists }} main contrib non-free-firmware
         state: present
-        filename: backports
+        filename: debian-contrib
+        update_cache: "{{ item.update_cache }}"
+      loop:
+        - {dists: "{{ ansible_distribution_release }}", update_cache: false}
+        - {dists: "{{ ansible_distribution_release }}-updates", update_cache: true}
 
     - name: Install ZFS dep packages (assumes Live CD Environment) Debian
       ansible.builtin.apt:
@@ -38,7 +47,7 @@
 
     - name: Install ZFS packages (assumes Live CD Environment)
       ansible.builtin.apt:
-        name: [zfs-dkms, zfsutils-linux]
+        name: zfsutils-linux
         state: present
       environment:
         DEBIAN_FRONTEND: noninteractive
