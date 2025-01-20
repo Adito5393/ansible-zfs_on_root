@@ -45,10 +45,12 @@ ZFS_RPOOL_NAME={{root_pool_name}}
 # ---------------------------------------------------------------------------
 BIOS_PARTITION="-part{{ boot_partition }}"
 SWAP_PARTITION="-part{{ swap_partition}}"
+LUKS2_PARTITION="{{ luks_partition }}"
 ROOT_PARTITION="{{root_partition_name_suffix}}"
 MDADM_SWAP_DEVICE="/dev/md0"
 UEFI_PARTITION_FLAGS="{{ uefi_partition_flags }}"
 SWAP_PARTITION_FLAGS="{{(root_pool_type == 'raidz')|ternary(raidz_multi_disk_swap_flags, single_disk_or_mirror_swap_flags)}}"
+LUKS2_PARTITION_FLAGS="{{ luks_partition_flags }}"
 ROOT_POOL_PARTITION_FLAGS="{{ root_partition_flags }}"
 # ---------------------------------------------------------------------------
 

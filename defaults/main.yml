@@ -134,7 +134,7 @@ zfs_compression: "lz4"
 # "+256G" will create partition 256Gib in size
 # "-200M" will use all available space, minus 200Mib
 # "0" (zero) use all available space
-root_partition_size: "0"
+root_partition_size: "-10M"
 
 # Prompt for Native ZFS Encryption Passphrase.  if true, then prompt for
 # passphrase if not provided.

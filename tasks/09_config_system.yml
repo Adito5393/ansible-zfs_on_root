@@ -6,6 +6,18 @@
   tags:
     - config_system
   block:
+    # Copy the hostid used to create the ZFS pool
+    # https://wiki.archlinux.org/title/ZFS#Incorrect_hostid
+    # cp /etc/hostid /mnt/etc/hostid
+    - name: Copy the hostid used to create the ZFS pool
+      ansible.builtin.copy:
+        src: /etc/hostid
+        dest: /mnt/etc/hostid
+        remote_src: true
+        owner: root
+        group: root
+        mode: '0644'
+
     - name: Copy template files to /mnt/etc/
       ansible.builtin.template:
         src: "{{ item }}.j2"
@@ -41,10 +53,9 @@
         group: root
         mode: '0644'
 
-    # Update sources.list file on Ubuntu
     - name: Copy sources.list template to /mnt/etc/apt/sources.list
       ansible.builtin.template:
-        src: "{{ ansible_distribution }}-sources.list.j2"
+        src: "{{ distro_name }}-sources.list.j2"
         dest: "{{ live_cd_mountpoint }}/etc/apt/sources.list"
         owner: root
         group: root

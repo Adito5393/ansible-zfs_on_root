@@ -1,29 +1,27 @@
-# ZFS on Root For Ubuntu 22.04 LTS
+# ZFS on Root For Debian 12 (bookworm)
 
-This Ansible role is my standardized ZFS on Root installation that I use as a base for all my systems.  Additional roles are applied on top of this to make the generic host a specialized Home Theater PC, Full Graphical Desktop, Kubernetes Cluster node, a headless Docker Server, etc...
-
-_NOTE: This Ansible role is not structured as rigid as a typical Ansible role should be.  Tips and suggestions on how to improve this are welcomed._
+This Ansible role is my standardized ZFS on Root installation that I use as a base for all my systems.  Additional roles are applied on top of this to make the generic host a specialized Full Graphical Desktop, a headless Docker Server, etc...
 
 ---
 
-Originally based on the [OpenZFS ZFS on Root](https://openzfs.github.io/openzfs-docs/Getting%20Started/Ubuntu/Ubuntu%2022.04%20Root%20on%20ZFS.html) Guide, but no longer!! Now with many enhancements:
+Originally based on the [reefland's Ubuntu role](https://github.com/reefland/ansible-zfs_on_root) and the [ZFSbootMenu (Bookworm 12 UEFI)](https://docs.zfsbootmenu.org/en/latest/guides/debian/bookworm-uefi.html) Guide, with many enhancements:
 
-* Uses ZFSbootMenu / rEFInd / Syslinux to manage boot environments
+* Uses ZFSbootMenu / rEFInd ~~/ Syslinux~~ to manage boot environments
   * rEFInd provides graphical boot loader menu and roll-back to previous kernels on UEFI systems
-  * Syslinux provides boot loader menu for Legacy BIOS systems
+  * ~~Syslinux provides boot loader menu for Legacy BIOS systems~~ (removed from [reefland/ansible-zfs_on_root](https://github.com/reefland/ansible-zfs_on_root))
   * ZFSbootMenu provides menu driven roll-back to previous ZFS snapshots
   * Automatic snapshot creation upon apt/dpkg install or remove
 * No GRUB Boot Loader!
-* All ESP (boot) partitions are `mdadm` mirror across all devices
+* All ESP (boot) partitions are ~~`mdadm`~~ copied across all devices via [syncbootpart](https://github.com/medo64/SyncDiskPart)
 * No separation of `bpool` and `rpool` just a single `rpool` is needed
 * Predefine rules for ZFS `rpool` pools types (mirror, raidz1, raidz2, multiple mirror vdevs) based on number of devices available
-* Swap partitions can be enabled
-  * Multi-disk swap partitions automatically setup with `mdadm`
-  * If encryption is enabled, LUKS is used to encrypt Swap partitions
+* ~~Swap partitions can be enabled~~
+  * ~~Multi-disk swap partitions automatically setup with `mdadm`~~
+  * ~~If encryption is enabled, LUKS is used to encrypt Swap partitions~~
 * Native ZFS Encryption Support
-* UEFI and Legacy Booting supported (can even switch between them)
-* Support for [Ubuntu Hardware Enablement](https://ubuntu.com/kernel/lifecycle) (newer kernel and hardware support)
-* Multiple non-root user account creation (each user gets own ZFS dataset)
+* UEFI ~~and Legacy~~ Booting supported ~~(can even switch between them)~~
+* [?] Support for [Ubuntu Hardware Enablement](https://ubuntu.com/kernel/lifecycle) (newer kernel and hardware support)
+* ~~Multiple non-root user account creation (each user gets own ZFS dataset)~~
 * Customized SSH Configuration Options
 * DropBear support for unlocking ZFS encrypted pool remotely
 * Support for Apt-Cacher-NG proxy for cached packages
@@ -42,18 +40,22 @@ Originally based on the [OpenZFS ZFS on Root](https://openzfs.github.io/openzfs-
 * Review the `defaults/main.yml` to set temporary passwords,  non-root user account(s) and basic rules on boot partition sizes, swap partitions, etc.
 * Defaults to building a headless server environment, however a full graphical desktop can be enabled.
 
+Future plans:
+
+* check this custom [live build debian](https://github.com/mmitch/debian-live-mitch-zfs/tree/master) repo & see [live build](https://debian-live-config.readthedocs.io/en/latest/custom.html) docs in order to have a recovery ISO live Debian with ZFS loaded available on a USB stick
+
 ---
 
 ## Environments Tested
 
-* Ubuntu 22.04.x Live CD Boot on Bare Metal or within VirtualBox
+* Debian 12 (bookworm) Live CD Boot on Bare Metal or within QEMU VM powered by Proxmox VE
 
 ---
 
 ## Requirements
 
 * [Ansible](https://www.ansible.com/) (Built with Ansible Core 2.12 or newer)
-* [Ubuntu 22.04.x "Jammy" Live CD](https://ubuntu.com/download/desktop/) (22.04 LTS Desktop - DO NOT use server images)
+* [Debian 12 (bookworm) Live CD](https://ubuntu.com/download/desktop/) (22.04 LTS Desktop - DO NOT use server images)
   * _NOTE: you can configure for command-line only server build even when using the desktop image._
 * Computers that have less than 2 GiB of memory run ZFS slowly. 4 GiB of memory is recommended for normal performance in basic workloads.
 

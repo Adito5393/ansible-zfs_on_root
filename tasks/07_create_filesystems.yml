@@ -9,28 +9,25 @@
     - name: Debug Create Root Filesystem Dataset Container
       ansible.builtin.debug:
         msg: "zfs create {{ root_pool_container_options | join(' ') }}"
-      when:
-        debug | default(false)
+      when: debug | default(false)
 
-    - name: Create Root Filesystem Dataset Container without Encryption
+    - name: Create Root Filesystem Dataset Container with or without Encryption
       ansible.builtin.command:
         "zfs create {{ root_pool_container_options | join(' ') }}"
       register: cmd_output
       changed_when: cmd_output.rc == 0
-      when:
-        - not root_pool_encryption|default(false)
 
-    - name: Create Root Filesystem Dataset Container with Encryption
-      ansible.builtin.expect:
-        command:
-          "zfs create {{ root_pool_container_options | join(' ') }}"
-        responses:
-          passphrase: "{{ passphrase }}"
-          again: "{{ passphrase }}"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
-      when:
-        - root_pool_encryption|default(false)
+    # - name: Create Root Filesystem Dataset Container with Encryption
+    #   ansible.builtin.expect:
+    #     command:
+    #       "zfs create {{ root_pool_container_options | join(' ') }}"
+    #     responses:
+    #       passphrase: "{{ passphrase }}"
+    #       again: "{{ passphrase }}"
+    #   register: cmd_output
+    #   changed_when: cmd_output.rc == 0
+    #   when:
+    #     - root_pool_encryption|default(false)
 
     - name: Debug Create Root Filesystem
       ansible.builtin.debug:
@@ -38,9 +35,7 @@
       with_items:
         - "zfs create {{ root_dataset_options | join(' ') }} {{ root_pool_dataset_path }}"
         - "zpool set bootfs={{ root_pool_dataset_path }} {{ root_pool_name }}"
-        - "zfs mount {{ root_pool_dataset_path }}"
-      when:
-        debug | default(false)
+      when: debug | default(false)
 
     - name: Create Root Filesystem
       ansible.builtin.command:
@@ -50,4 +45,3 @@
       with_items:
         - "zfs create {{ root_dataset_options | join(' ') }} {{ root_pool_dataset_path }}"
         - "zpool set bootfs={{ root_pool_dataset_path }} {{ root_pool_name }}"
-        - "zfs mount {{ root_pool_dataset_path }}"
