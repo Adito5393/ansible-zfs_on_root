@@ -42,6 +42,46 @@ Originally based on the [reefland's Ubuntu role](https://github.com/reefland/ans
 
 Future plans:
 
+* Add j2 template config (allow user to pass path to the j2 file relative to the playbook!) via `apt install debconf-utils` for:
+  * `keyboard-configuration` default vars are:
+
+  ```bash
+  debconf-get-selections | grep keyboard-configuration
+  keyboard-configuration  keyboard-configuration/altgr    select  The default for the keyboard layout
+  keyboard-configuration  keyboard-configuration/compose  select  No compose key
+  keyboard-configuration  keyboard-configuration/ctrl_alt_bksp    boolean false
+  keyboard-configuration  keyboard-configuration/layout   select
+  keyboard-configuration  keyboard-configuration/layoutcode       string  us
+  keyboard-configuration  keyboard-configuration/model    select  Generic 105-key PC
+  keyboard-configuration  keyboard-configuration/modelcode        string  pc105
+  keyboard-configuration  keyboard-configuration/optionscode      string
+  keyboard-configuration  keyboard-configuration/store_defaults_in_debconf_db     boolean true
+  keyboard-configuration  keyboard-configuration/switch   select  No temporary switch
+  keyboard-configuration  keyboard-configuration/toggle   select  No toggling
+  keyboard-configuration  keyboard-configuration/unsupported_config_layout        boolean true
+  keyboard-configuration  keyboard-configuration/unsupported_config_options       boolean true
+  keyboard-configuration  keyboard-configuration/unsupported_layout       boolean true
+  keyboard-configuration  keyboard-configuration/unsupported_options      boolean true
+  keyboard-configuration  keyboard-configuration/variant  select  English (US)
+  keyboard-configuration  keyboard-configuration/variantcode      string
+  keyboard-configuration  keyboard-configuration/xkb-keymap       select  us
+  ```
+
+  * `console-setup` default vars are:
+
+  ```bash
+  debconf-get-selections | grep console-setup
+
+  console-setup   console-setup/charmap47 select  UTF-8
+  console-setup   console-setup/codeset47 select  Guess optimal character set
+  console-setup   console-setup/codesetcode       string  guess
+  console-setup   console-setup/fontface47        select  Fixed
+  console-setup   console-setup/fontsize  string  8x16
+  console-setup   console-setup/fontsize-fb47     select  8x16
+  console-setup   console-setup/fontsize-text47   select  8x16
+  console-setup   console-setup/store_defaults_in_debconf_db      boolean true
+  ```
+
 * check this custom [live build debian](https://github.com/mmitch/debian-live-mitch-zfs/tree/master) repo & see [live build](https://debian-live-config.readthedocs.io/en/latest/custom.html) docs in order to have a recovery ISO live Debian with ZFS loaded available on a USB stick
 
 ---
