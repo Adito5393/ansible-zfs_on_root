@@ -1,0 +1,25 @@
+- name: Run chroot command to install dosfstool
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'apt-get install --yes dosfstools'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+
+- name: Create EFI filesystem on boot device
+  ansible.builtin.command:
+  # mkfs.vfat -F32 "$BOOT_DEVICE1"  mkfs.vfat -v -F 32 -s 1 -n BOOT_EFI {{ boot_dev_name }}
+    cmd: "{{ chroot_cmd }} bash -c 'mkfs.vfat -F32 {{ item }}-part{{ boot_partition }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  loop:
+    "{{ disk_by_id }}"
+  loop_control:
+    index_var: index
+
+- name: Run chroot command to create /boot/efi directory
+  ansible.builtin.command:
+    "{{ chroot_cmd }} bash -c '{{ item }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - mkdir -p /boot/efi
+    - mount /boot/efi

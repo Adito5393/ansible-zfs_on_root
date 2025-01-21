@@ -1,0 +1,39 @@
+# Adapted from https://github.com/ecgalaxy/task
+- name: Ensure task lib folder exists
+  ansible.builtin.file:
+    path: "{{ live_cd_mountpoint }}/{{ task_install_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Download task archive
+  ansible.builtin.get_url:
+    url: "{{ task_download_url }}"
+    dest: /tmp/task.tar.gz
+    mode: "0644"
+    checksum: "{{ task_archive_checksum }}"
+  changed_when: false
+
+- name: Extract task archive
+  ansible.builtin.unarchive:
+    src: /tmp/task.tar.gz
+    dest: "{{ live_cd_mountpoint }}/{{ task_install_path }}"
+    creates: "{{ live_cd_mountpoint }}/{{ task_install_path }}/task"
+    owner: root
+    group: root
+    remote_src: true
+
+- name: Remove task archive
+  ansible.builtin.file:
+    path: /tmp/task.tar.gz
+    state: absent
+  changed_when: false
+
+- name: Create task symlink
+  ansible.builtin.command:
+    "{{ chroot_cmd }} bash -c '{{ item }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - ln -s {{ task_install_path }}/task {{ task_bin }}

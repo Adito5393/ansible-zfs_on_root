@@ -53,6 +53,14 @@
     #   when:
     #     - enable_swap_partitions | default(true) | bool
 
+    - name: Format LUKS partitions
+      ansible.builtin.command:
+        cmd: "sgdisk {{ luks_partition_flags }} {{ item }}"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      loop:
+        "{{ disk_by_id }}"
+
     - name: Create Root Pool Partitions
       ansible.builtin.command:
         cmd: "sgdisk {{ root_partition_flags }} {{ item }}"

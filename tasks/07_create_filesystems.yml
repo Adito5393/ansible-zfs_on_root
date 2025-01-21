@@ -17,18 +17,6 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
-    # - name: Create Root Filesystem Dataset Container with Encryption
-    #   ansible.builtin.expect:
-    #     command:
-    #       "zfs create {{ root_pool_container_options | join(' ') }}"
-    #     responses:
-    #       passphrase: "{{ passphrase }}"
-    #       again: "{{ passphrase }}"
-    #   register: cmd_output
-    #   changed_when: cmd_output.rc == 0
-    #   when:
-    #     - root_pool_encryption|default(false)
-
     - name: Debug Create Root Filesystem
       ansible.builtin.debug:
         msg: "{{ item }}"

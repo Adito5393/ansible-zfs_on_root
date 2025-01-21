@@ -212,3 +212,10 @@ apply_dropbear_settings:
   # Allow dracut / dropbear use main user authorized_keys for access
   # Note that login to dropbear is "root" regardless of which authorized_keys is used
   public_key_for_dropbear: "/home/{{ regular_user_accounts[0].user_id }}/.ssh/authorized_keys"
+
+task_version: 3.41.0
+task_download_url: "https://github.com/go-task/task/releases/download/v{{ task_version }}/task_linux_amd64.tar.gz"
+task_archive_checksum: "sha256:0a2595f7fa3c15a62f8d0c244121a4977018b3bfdec7c1542ac2a8cf079978b8"
+task_install_basedir: "/opt/task"
+task_install_path: "{{ task_install_basedir }}/{{ task_version }}"
+task_bin: "/usr/local/bin/task"

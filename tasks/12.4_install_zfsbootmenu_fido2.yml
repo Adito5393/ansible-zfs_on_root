@@ -1,0 +1,54 @@
+- name: Run chroot command to install ZFS Boot Menu
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - DEBIAN_FRONTEND=noninteractive apt-get --yes install kexec-tools
+    - >
+        apt-get --yes install \
+          libsort-versions-perl \
+          libboolean-perl \
+          libyaml-pp-perl \
+          git \
+          fzf \
+          curl \
+          mbuffer \
+          dracut-core \
+          efibootmgr \
+          systemd-boot-efi \
+          bsdextrautils \
+          make
+
+- name: Install git
+  ansible.builtin.apt:
+    name: [git]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Git checkout zfsbootmenu
+  ansible.builtin.git:
+    repo: https://github.com/zbm-dev/zfsbootmenu.git
+    dest: "{{ live_cd_mountpoint }}/usr/local/src/zfsbootmenu"
+    version: v2.3.0
+
+- name: Install zfsbootmenu
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'cd /usr/local/src/zfsbootmenu && make core dracut'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+
+- name: Git checkout fido2-nosystemd
+  ansible.builtin.git:
+    repo: https://github.com/Adito5393/fido2-nosystemd.git
+    dest: "{{ live_cd_mountpoint }}/usr/local/src/fido2-nosystemd"
+    # commit Jan 2025: Use apt-get instead of apt (noninteractive)
+    version: 97355d7e95ed1633325a7f8ea2e42f15b838a78e
+
+# Run task --dry full:install-release to print commands
+- name: Run chroot command to install ZFS Boot Menu
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'cd /usr/local/src/fido2-nosystemd && {{ task_bin }} full:install-release'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0

@@ -1,0 +1,122 @@
+# TASKS from 10.1_config luks YAML
+- name: Write zeros to the partition
+  ansible.builtin.command:
+    # Inside chroot {{ chroot_cmd }} bash -c '{{ item }}'
+    cmd: dd if=/dev/zero of=/dev/mapper/KEYSTORE{{ index }} bs=1024M
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  failed_when: false
+  loop:
+    "{{ disk_by_id }}"
+  loop_control:
+    index_var: index
+
+- name: Format to EXT4
+  ansible.builtin.command:
+    cmd: mkfs.ext4 /dev/mapper/KEYSTORE{{ index }}
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  loop:
+    "{{ disk_by_id }}"
+  loop_control:
+    index_var: index
+
+- name: Ensure directories for ZFS keys exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  with_items:
+    - "{{ live_cd_mountpoint }}/etc/zfs/keys"
+    - "{{ live_cd_mountpoint }}/tmp/dir_luks2"
+
+# - name: Ensure directories for temporary mount exist for all drives
+#   ansible.builtin.command:
+#     cmd: "{{ chroot_cmd }} bash -c 'for i in $(seq 1 {{ disk_by_id | length }}); do mkdir -p /tmp/dir$i; done'"
+#   register: cmd_output
+#   changed_when: cmd_output.rc == 0
+
+- name: Mount inside the chroot the LUKS2 partition
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'mount /dev/mapper/{{ item }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - KEYSTORE0 /etc/zfs/keys
+    - KEYSTORE1 /tmp/dir_luks2
+
+# Generate a long passphrase & Save it to the ZFS encryption dataset
+- name: Generate and save the LUKS2 unlock key
+  ansible.builtin.shell:
+    cmd: >
+        set -o pipefail &&
+        (tr -dc '[:alnum:]' </dev/urandom | head -c64) || true > {{ live_cd_mountpoint }}/etc/zfs/keystore-luks2.key &&
+        chmod 600 {{ live_cd_mountpoint }}/etc/zfs/keystore-luks2.key
+    creates: "{{ live_cd_mountpoint }}/etc/zfs/keystore-luks2.key"
+    executable: /bin/bash
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+
+- name: Add key to LUKS2 partitions
+  ansible.builtin.expect:
+    command: cryptsetup luksAddKey {{ item }}-part{{ luks_partition }} {{ live_cd_mountpoint }}/etc/zfs/keystore-luks2.key
+    responses:
+      passphrase: "{{ luks2_password }}"
+  loop:
+    "{{ disk_by_id }}"
+
+- name: Update /etc/crypttab for KEYSTORE
+  ansible.builtin.copy:
+    dest: "{{ live_cd_mountpoint }}/etc/crypttab"
+    mode: "0644"
+    content: |
+      # <target name>  <source device>                    <key file>                    <options>
+      KEYSTORE0        /dev/disk/by-partlabel/KEYSTORE    /etc/zfs/keystore-luks2.key   timeout=60
+
+- name: Update /etc/fstab for KEYSTORE
+  ansible.builtin.copy:
+    dest: "{{ live_cd_mountpoint }}/etc/fstab"
+    mode: "0644"
+    content: |
+      # <device>             <dir>           <type>  <options>  <dump>  <fsck>
+      PARTLABEL=EFI          /boot/efi       vfat    defaults   0       0
+      /dev/mapper/KEYSTORE0  /etc/zfs/keys   ext4    defaults   0       2
+
+# ------------------------------------
+# Original content
+- name: Copy ZFS key to temporary and permanent locations
+  ansible.builtin.copy:
+    src: /etc/zfs/zroot.key
+    remote_src: true
+    dest: "{{ item }}"
+    mode: "000"
+  with_items:
+    - "{{ live_cd_mountpoint }}/tmp/dir_luks2/zroot.key"
+    - "{{ live_cd_mountpoint }}/etc/zfs/keys/zroot.key"
+
+- name: Remove the zfs key password
+  ansible.builtin.file:
+    path: /etc/zfs/zroot.key
+    state: absent
+
+- name: Update ZFS key location
+  ansible.builtin.command:
+    cmd: zfs set keylocation="file:///etc/zfs/keys/zroot.key" {{ root_pool_name }}
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+
+- name: Create dracut configuration for ZFS
+  ansible.builtin.copy:
+    dest: "{{ live_cd_mountpoint }}/etc/dracut.conf.d/zol.conf"
+    mode: "0644"
+    content: |
+      nofsck="yes"
+      add_dracutmodules+=" zfs "
+      omit_dracutmodules+=" btrfs "
+      install_items+=" /etc/zfs/keys/zroot.key "
+
+- name: Re-build the initramfs with the ZFS key
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'dracut --regenerate-all -f'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0

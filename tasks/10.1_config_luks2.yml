@@ -1,0 +1,41 @@
+# [ Setup Boot Partition as mdadm mirror for multi-disk setups ]###############
+- name: Create Luks2 Partition Mirror 2x drives
+  when:
+    - ansible_nodename != "localhost"
+    - disk_by_id | length | int == 2
+  tags:
+    - config_luk2_mirror2
+  block:
+    - name: Install cryptsetup required by LUKS2 usage
+      ansible.builtin.apt:
+        name: [cryptsetup]
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Format to LUKS2 with same password
+      ansible.builtin.shell:
+        cmd: >
+          set -o pipefail &&
+          echo -n "{{ luks2_password }}" |
+          cryptsetup luksFormat --type luks2 {{ item }}-part{{ luks_partition }} -
+        executable: /bin/bash
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      loop:
+        "{{ disk_by_id }}"
+
+    # Also possible: echo -n "This is pass1" | cryptsetup luksOpen /dev/sdb2 KEYSTORE0 -
+    - name: Unlock the LUKS2 partitions and map them
+      ansible.builtin.expect:
+        command: cryptsetup luksOpen {{ item }}-part{{ luks_partition }} KEYSTORE{{ index }}
+        responses:
+          passphrase: "{{ luks2_password }}"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      loop:
+        "{{ disk_by_id }}"
+      loop_control:
+        index_var: index
+
+# MOVE BACK tasksts from
