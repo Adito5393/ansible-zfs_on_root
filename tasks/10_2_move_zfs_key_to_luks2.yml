@@ -1,0 +1,36 @@
+- name: Copy ZFS key to temporary and permanent locations
+  ansible.builtin.copy:
+    src: /etc/zfs/zroot.key
+    remote_src: true
+    dest: "{{ item }}"
+    mode: "000"
+  with_items:
+    - "{{ live_cd_mountpoint }}/tmp/dir_luks2/zroot.key"
+    - "{{ live_cd_mountpoint }}/etc/zfs/keys/zroot.key"
+
+- name: Remove the zfs key password
+  ansible.builtin.file:
+    path: /etc/zfs/zroot.key
+    state: absent
+
+- name: Update ZFS key location
+  ansible.builtin.command:
+    cmd: zfs set keylocation="file:///etc/zfs/keys/zroot.key" {{ root_pool_name }}
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+
+- name: Create dracut configuration for ZFS
+  ansible.builtin.copy:
+    dest: "{{ live_cd_mountpoint }}/etc/dracut.conf.d/zol.conf"
+    mode: "0644"
+    content: |
+      nofsck="yes"
+      add_dracutmodules+=" zfs "
+      omit_dracutmodules+=" btrfs "
+      install_items+=" /etc/zfs/keys/zroot.key "
+
+- name: Re-build the initramfs with the ZFS key
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'dracut --regenerate-all -f'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0

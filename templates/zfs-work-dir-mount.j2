@@ -1,0 +1,15 @@
+[Unit]
+Description=Mount the home dir via the encrypted work dataset
+DefaultDependencies=no
+After=zfs-mount.service
+Before=local-fs.target
+Before=systemd-user-sessions.service
+ConditionPathIsDirectory=/sys/module/zfs
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/sbin/zfs mount {{ root_pool_home_dataset_path }}/work
+
+[Install]
+WantedBy=zfs.target

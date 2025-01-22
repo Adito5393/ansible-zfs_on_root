@@ -1,0 +1,8 @@
+# /etc/systemd/system/zfs-work-dir-mount.service
+- name: Install systemd service to mount HOME work dataset
+  ansible.builtin.template:
+    src: zfs-work-dir-mount.j2
+    dest: "{{ live_cd_mountpoint }}/etc/systemd/system/zfs-work-dir-mount.service"
+    owner: root
+    group: root
+    mode: '0644'

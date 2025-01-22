@@ -32,23 +32,45 @@
     repo: https://github.com/zbm-dev/zfsbootmenu.git
     dest: "{{ live_cd_mountpoint }}/usr/local/src/zfsbootmenu"
     version: v2.3.0
+  register: git_result
+
+# Assign command-line arguments to be used when booting the final kernel
+- name: Run chroot command to assign arguments when booting kernel
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - 'zfs set org.zfsbootmenu:commandline="quiet" {{ root_pool_name }}/ROOT'
+    - 'zfs set org.zfsbootmenu:commandline="quiet" {{ root_pool_dataset_path }}'
+    - 'zfs set org.zfsbootmenu:keysource="{{ root_pool_dataset_path }}" {{ root_pool_name }}'
 
 - name: Install zfsbootmenu
   ansible.builtin.command:
     cmd: "{{ chroot_cmd }} bash -c 'cd /usr/local/src/zfsbootmenu && make core dracut'"
   register: cmd_output
   changed_when: cmd_output.rc == 0
+  when: git_result.changed # noqa: no-handler
 
 - name: Git checkout fido2-nosystemd
   ansible.builtin.git:
     repo: https://github.com/Adito5393/fido2-nosystemd.git
     dest: "{{ live_cd_mountpoint }}/usr/local/src/fido2-nosystemd"
-    # commit Jan 2025: Use apt-get instead of apt (noninteractive)
-    version: 97355d7e95ed1633325a7f8ea2e42f15b838a78e
+    # commit Jan 2025: Add support for syncbootpart aka SyncDiskPart
+    version: b8581d17b05cd5fad1ecb2f689418fcfffd7d829
 
 # Run task --dry full:install-release to print commands
 - name: Run chroot command to install ZFS Boot Menu
   ansible.builtin.command:
-    cmd: "{{ chroot_cmd }} bash -c 'cd /usr/local/src/fido2-nosystemd && {{ task_bin }} full:install-release'"
+    cmd: "{{ chroot_cmd }} bash -c 'cd /usr/local/src/fido2-nosystemd && {{ task_bin }} sb:update-auto-signing-setup sb:install-dependencies full:install-release'" # noqa: yaml[line-length]
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+
+- name: Enrol the local key to MOK
+  ansible.builtin.expect:
+    command: mokutil -i {{ live_cd_mountpoint }}/boot/efi/EFI/refind/keys/refind_local.cer
+    responses:
+    # Case insensitive match
+      (?i)password: mok123
   register: cmd_output
   changed_when: cmd_output.rc == 0

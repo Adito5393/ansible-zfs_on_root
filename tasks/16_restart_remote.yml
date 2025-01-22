@@ -12,6 +12,9 @@
           # {{ (ansible_ssh_host | default(ansible_host)) | default(inventory_hostname) }} will be rebooted.
           ##########################################################
 
+            When prompted for LUKS2 password:
+            Encryption password: {{ (no_log_secrets | default(true)) | ternary("**********", luks2_password) }}
+
             When prompted for passphrase for {{ root_pool_name }}:
             Encryption Passphrase: {{ (no_log_secrets | default(true)) | ternary("**********", passphrase) }}
 
@@ -20,6 +23,8 @@
 
             NOTE: If system boots back into LiveCD Environment, you may
                   have to manually eject CD, it is not needed anymore.
+
+            Make a snapshot after reboot: zfs snapshot {{ root_pool_dataset_path }}@base_install
 
           Press ENTER to reboot {{ (ansible_ssh_host | default(ansible_host)) | default(inventory_hostname) }}
       when:

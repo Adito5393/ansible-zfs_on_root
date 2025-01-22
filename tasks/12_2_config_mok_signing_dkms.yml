@@ -1,0 +1,68 @@
+- name: Delete found MOK files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ live_cd_mountpoint }}/var/lib/dkms/mok.key"
+    - "{{ live_cd_mountpoint }}/var/lib/dkms/mok.pub"
+
+- name: Ensure mok_signing_key is configured
+  ansible.builtin.lineinfile:
+    path: "{{ live_cd_mountpoint }}/etc/dkms/framework.conf"
+    regexp: '^mok_signing_key='
+    line: 'mok_signing_key="/etc/refind.d/keys/refind_local.key"'
+    create: false
+
+- name: Ensure mok_certificate is configured
+  ansible.builtin.lineinfile:
+    path: "{{ live_cd_mountpoint }}/etc/dkms/framework.conf"
+    regexp: '^mok_certificate='
+    line: 'mok_certificate="/etc/refind.d/keys/refind_local.crt"'
+    create: false
+
+- name: Install refind
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - dpkg -i /tmp/refind_0.14.2-1_amd64.deb
+    - refind-install --yes --localkeys --shim /usr/lib/shim/shimx64.efi.signed
+    - rm -rf /boot/refind_linux.conf
+
+- name: Gather DKMS status
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'dkms status'"
+  register: dkms_output
+  changed_when: dkms_output.rc == 0
+
+- name: Parse ZFS version from DKMS status
+  ansible.builtin.set_fact:
+    module_zfs_and_version: "{{ dkms_output.stdout | regex_search('zfs\\/([0-9.]+)') }}"
+  changed_when: false
+
+- name: Remove previous ZFS build
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'dkms remove {{ module_zfs_and_version }} --all'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  when: module_zfs_and_version is not none
+
+- name: Add ZFS build
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'dkms add {{ module_zfs_and_version }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  when: module_zfs_and_version is not none
+
+- name: Auto-install ZFS build
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'dkms autoinstall'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+
+- name: Re-build the initramfs with the ZFS module signed
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'dracut --regenerate-all -f'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0

@@ -27,8 +27,33 @@
   register: cmd_output
   changed_when: cmd_output.rc == 0
   with_items:
+    # Mount required for mokutil --sb-state usage also
+    - mount -t efivarfs efivarfs /sys/firmware/efi/efivars
     - dpkg -i /tmp/refind_0.14.2-1_amd64.deb
     - refind-install --yes --localkeys --shim /usr/lib/shim/shimx64.efi.signed
     - rm -rf /boot/refind_linux.conf
   environment:
     DEBIAN_FRONTEND: noninteractive
+
+# https://github.com/Adito5393/SyncDiskPart
+- name: Download SyncDiskPart
+  ansible.builtin.get_url:
+    url: https://packages.medo64.com/deb/dists/stable/main/binary-all/syncbootpart_1.0.0_all.deb
+    dest: "{{ live_cd_mountpoint }}/tmp/syncbootpart_1.0.0_all.deb"
+    mode: "0644"
+    # TODO use var  "{{ syncbootpart_deb_checksum }}"
+    checksum: sha256:801b9789c92a818540d81398275e16369a2ec192a41deaf5ae986d3473889c3d
+  changed_when: false
+
+- name: Install SyncDiskPart aka syncbootpart
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - DEBIAN_FRONTEND=noninteractive dpkg -i /tmp/syncbootpart_1.0.0_all.deb
+
+- name: Remove custom medo64 deb source
+  ansible.builtin.file:
+    path: "{{ live_cd_mountpoint }}/etc/apt/sources.list.d/medo64.list"
+    state: absent

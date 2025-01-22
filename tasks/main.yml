@@ -36,22 +36,18 @@
     - 08_create_datasets.yml
     - 09_config_system.yml
     - 10_install_zfs.yml
-    - 11_config_boot_filesystem.yml
-    - 12_0-install_dracut.yml
-    - 12_3-install_refind.yml
-    - 12_4-install_syslinux.yml
-    - 12_5-install_zfsbootmenu.yml
-    - 12_6-config_swap.yml
+    - 10_1_config_luks2.yml
+    - 10_2_move_zfs_key_to_luks2.yml
+    - 11_config_boot_efi.yml
+    - 12_1_install_refind.yml
+    - 12_2_config_mok_signing_dkms.yml
+    - 12_3_install_task_runner.yml
+    - 12_4_install_zfsbootmenu_fido2.yml
+    - 12_5_zfs_set_home.yml
     - 12_7-system_tweaks.yml
-    - 13_first_boot_prep.yml
-    # - 14-not-used
+    - 13_0_first_boot_prep.yml
     - 15_unmount_chroot.yml
     - 16_restart_remote.yml
-    - 17_create_regular_user.yml
-    - 17_5-copy_keys_notice.yml
-    - 18_enable_dropbear.yml
-    - 19_final_setup.yml
-    - 20_restart_remote_final.yml
   loop_control:
     label: "{{ task_names }}"
     loop_var: task_names
