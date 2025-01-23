@@ -56,8 +56,8 @@
   ansible.builtin.git:
     repo: https://github.com/Adito5393/fido2-nosystemd.git
     dest: "{{ live_cd_mountpoint }}/usr/local/src/fido2-nosystemd"
-    # commit Jan 2025: Add support for syncbootpart aka SyncDiskPart
-    version: b8581d17b05cd5fad1ecb2f689418fcfffd7d829
+    # commit Jan 2025: Set Unlock via password as default
+    version: 2b9f8b133c2a84befb2824c5c50f57d0c13bd9a9
 
 # Run task --dry full:install-release to print commands
 - name: Run chroot command to install ZFS Boot Menu
