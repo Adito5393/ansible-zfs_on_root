@@ -1,7 +1,7 @@
 # Adapted from https://github.com/ecgalaxy/task
 - name: Ensure task lib folder exists
   ansible.builtin.file:
-    path: "{{ live_cd_mountpoint }}/{{ task_install_path }}"
+    path: "{{ live_cd_mountpoint }}{{ task_install_path }}"
     state: directory
     owner: root
     group: root
@@ -18,8 +18,8 @@
 - name: Extract task archive
   ansible.builtin.unarchive:
     src: /tmp/task.tar.gz
-    dest: "{{ live_cd_mountpoint }}/{{ task_install_path }}"
-    creates: "{{ live_cd_mountpoint }}/{{ task_install_path }}/task"
+    dest: "{{ live_cd_mountpoint }}{{ task_install_path }}"
+    creates: "{{ live_cd_mountpoint }}{{ task_install_path }}/task"
     owner: root
     group: root
     remote_src: true
