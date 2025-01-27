@@ -3,7 +3,6 @@
     name: "{{ item }}"
     enabled: true
     state: started
-    daemon_reload: true
   loop:
     - zpool-trim@{{ root_pool_name }}.service
     - zpool-trim@{{ root_pool_name }}.timer
@@ -11,18 +10,24 @@
     - zpool-scrub@{{ root_pool_name }}.timer
     - zfs-work-dir-mount.service
 
-- name: Run chroot commands to enable ZFS Trim Services
+- name: Reload systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Disable zfs auto trim
   ansible.builtin.command:
-    cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+    cmd: "{{ item }}"
   register: cmd_output
   changed_when: cmd_output.rc == 0
   with_items:
-    - zpool set autotrim=off {{ root_pool_dataset_path }}
+    - zpool set autotrim=off {{ root_pool_name }}
 
-# RESIGNING ZFS has to be done OUTSIDE OF CHROOT
-# If the LIVE CD runs a different kernel THAN the installed chroot
-# Fix it via update_cache: true on Live ISO -> NOT ENOUGH! it requires reboot to use the new update!
-# LEAVE IT for the initial boot!
+- name: Update timezone setting
+  ansible.builtin.command:
+    cmd: timedatectl set-timezone {{ timezone_value }}
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+
 - name: Gather DKMS status
   ansible.builtin.command:
     cmd: dkms status
@@ -90,3 +95,9 @@
   register: cmd_output
   changed_when: cmd_output.rc == 0
   when: not install_nvidia_driver
+
+- name: Re-generate ZFS Boot Menu with ZFS signed
+  ansible.builtin.command:
+    cmd: generate-zbm --debug
+  register: cmd_output
+  changed_when: cmd_output.rc == 0

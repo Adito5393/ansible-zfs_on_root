@@ -13,6 +13,7 @@
   register: cmd_output
   changed_when: cmd_output.rc == 0
   with_items:
+    - apt-get install unzip
     - "rm -rf /tmp/memtest86 && mkdir -p /tmp/memtest86/mnt"
     - "mkdir -p {{ efi_boot_path }}/tools/memtest86"
     - "curl -L https://www.memtest86.com/downloads/memtest86-usb.zip -o /tmp/memtest86/memtest86-usb.zip"
