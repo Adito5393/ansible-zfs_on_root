@@ -54,24 +54,39 @@
   register: cmd_output
   changed_when: cmd_output.rc == 0
 
-# # Nvidia driver
-- name: Include modprobe configuration files for Nvidia driver
-  ansible.builtin.copy:
-    dest: /etc/dracut.conf.d/10-nvidia.conf
-    content: install_items+=" /etc/modprobe.d/nvidia-blacklists-nouveau.conf /etc/modprobe.d/nvidia.conf /etc/modprobe.d/nvidia-options.conf "
-    owner: root
-    group: root
-    mode: "0644"
+- name: Install Nvidia driver
+  when: install_nvidia_driver
+  block:
+    - name: Include modprobe configuration files for Nvidia driver
+      ansible.builtin.copy:
+        dest: /etc/dracut.conf.d/10-nvidia.conf
+        content: |
+          install_items+=" /etc/modprobe.d/nvidia-blacklists-nouveau.conf /etc/modprobe.d/nvidia.conf /etc/modprobe.d/nvidia-options.conf "
+          omit_dracutmodules+=" plymouth "
+          omit_drivers+=" amdgpu "
+        owner: root
+        group: root
+        mode: "0644"
 
-- name: Install the nvidia-driver package, plus the necessary firmware
-  ansible.builtin.apt:
-    name: ['nvidia-driver ', 'firmware-misc-nonfree']
-    state: present
-    update_cache: true
+    # Maybe also amd64-microcode ?
+    - name: Install the nvidia-driver package, plus the necessary firmware
+      ansible.builtin.apt:
+        name: [nvidia-driver, firmware-misc-nonfree, firmware-amd-graphics]
+        state: present
+        update_cache: true
+
+    # cat /sys/module/nvidia_drm/parameters/modeset should output Y
+    - name: Enable nvidia-drm modeset
+      ansible.builtin.lineinfile:
+        path: /etc/modprobe.d/nvidia-options.conf
+        regexp: '^options nvidia-drm modeset'
+        line: options nvidia-drm modeset=1
+        create: false
 
 # Automatically Triggered after/by nvidia-driver
-# - name: Re-build the initramfs with the ZFS module signed
-#   ansible.builtin.command:
-#     cmd: dracut --regenerate-all -f
-#   register: cmd_output
-#   changed_when: cmd_output.rc == 0
+- name: Re-build the initramfs with the ZFS module signed
+  ansible.builtin.command:
+    cmd: dracut --regenerate-all -f
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  when: not install_nvidia_driver
