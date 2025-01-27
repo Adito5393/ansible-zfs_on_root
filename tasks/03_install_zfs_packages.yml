@@ -28,6 +28,14 @@
         name: /etc/apt/sources.list.d/debian.sources
         state: absent
 
+    - name: Clear Live ISO sources.list
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list
+        content: "# Use the /etc/apt/sources.list.d/"
+        owner: root
+        group: root
+        mode: '0644'
+
     - name: Add contrib non-free-firmware repositories into sources list
       ansible.builtin.apt_repository:
         repo: deb http://deb.debian.org/debian/ {{ item.dists }} main contrib non-free-firmware

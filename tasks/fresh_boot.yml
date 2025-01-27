@@ -1,0 +1,77 @@
+- name: Enable and start services
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+  loop:
+    - zpool-trim@{{ root_pool_name }}.service
+    - zpool-trim@{{ root_pool_name }}.timer
+    - zpool-scrub@{{ root_pool_name }}.service
+    - zpool-scrub@{{ root_pool_name }}.timer
+    - zfs-work-dir-mount.service
+
+- name: Run chroot commands to enable ZFS Trim Services
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - zpool set autotrim=off {{ root_pool_dataset_path }}
+
+# RESIGNING ZFS has to be done OUTSIDE OF CHROOT
+# If the LIVE CD runs a different kernel THAN the installed chroot
+# Fix it via update_cache: true on Live ISO -> NOT ENOUGH! it requires reboot to use the new update!
+# LEAVE IT for the initial boot!
+- name: Gather DKMS status
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'dkms status'"
+  register: dkms_output
+  changed_when: dkms_output.rc == 0
+
+- name: Parse ZFS version from DKMS status
+  ansible.builtin.set_fact:
+    module_zfs_and_version: "{{ dkms_output.stdout | regex_search('zfs\\/([0-9.]+)') }}"
+  changed_when: false
+
+- name: Remove previous ZFS build
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'dkms remove {{ module_zfs_and_version }} --all'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  when: module_zfs_and_version is not none
+
+- name: Add ZFS build
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'dkms add {{ module_zfs_and_version }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  when: module_zfs_and_version is not none
+
+- name: Auto-install ZFS build
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'dkms autoinstall'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+
+- name: Re-build the initramfs with the ZFS module signed
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'dracut --regenerate-all -f'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+
+# # Nvidia driver
+
+- name: Include modprobe configuration files for Nvidia driver
+  ansible.builtin.copy:
+    dest: /etc/dracut.conf.d/10-nvidia.conf
+    content: install_items+=" /etc/modprobe.d/nvidia-blacklists-nouveau.conf /etc/modprobe.d/nvidia.conf /etc/modprobe.d/nvidia-options.conf "
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install the nvidia-driver package, plus the necessary firmware
+  ansible.builtin.apt:
+    name: ['nvidia-driver ', 'firmware-misc-nonfree']
+    state: present
+    update_cache: true

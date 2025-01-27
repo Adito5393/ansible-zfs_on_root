@@ -13,7 +13,8 @@
 # If disk devices not specified on command line, detect available devices
 - name: Detect and Generate Available Disk Devices Block
   when:
-    disk_devices is undefined
+    - disk_devices is undefined
+    - disk_by_id is undefined
   tags:
     - always
   block:

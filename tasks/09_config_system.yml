@@ -53,10 +53,18 @@
         group: root
         mode: '0644'
 
+    - name: Clear the sources.list
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list
+        content: "# Use the /etc/apt/sources.list.d/"
+        owner: root
+        group: root
+        mode: '0644'
+
     - name: Copy sources.list template to /mnt/etc/apt/sources.list
       ansible.builtin.template:
         src: "{{ distro_name }}-sources.list.j2"
-        dest: "{{ live_cd_mountpoint }}/etc/apt/sources.list"
+        dest: "{{ live_cd_mountpoint }}/etc/apt/sources.list.d/00-{{ distro_name }}.list"
         owner: root
         group: root
         mode: '0644'

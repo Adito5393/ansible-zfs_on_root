@@ -28,3 +28,15 @@
         cmd: "zpool export -a"
       register: cmd_output
       changed_when: cmd_output.rc == 0
+
+    - name: Lock LUKS2 partitions
+      ansible.builtin.command:
+        # Inside chroot {{ chroot_cmd }} bash -c '{{ item }}'
+        cmd: cryptsetup close KEYSTORE{{ index }}
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      failed_when: false
+      loop:
+        "{{ disk_by_id }}"
+      loop_control:
+        index_var: index

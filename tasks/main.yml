@@ -43,6 +43,7 @@
     - 12_2_config_mok_signing_dkms.yml
     - 12_3_install_task_runner.yml
     - 12_4_install_zfsbootmenu_fido2.yml
+    - 12_4_install_efi_tools.yml
     - 12_5_zfs_set_home.yml
     - 12_7-system_tweaks.yml
     - 13_0_first_boot_prep.yml
