@@ -25,7 +25,7 @@
 # LEAVE IT for the initial boot!
 - name: Gather DKMS status
   ansible.builtin.command:
-    cmd: "{{ chroot_cmd }} bash -c 'dkms status'"
+    cmd: dkms status
   register: dkms_output
   changed_when: dkms_output.rc == 0
 
@@ -36,32 +36,25 @@
 
 - name: Remove previous ZFS build
   ansible.builtin.command:
-    cmd: "{{ chroot_cmd }} bash -c 'dkms remove {{ module_zfs_and_version }} --all'"
+    cmd: dkms remove {{ module_zfs_and_version }} --all
   register: cmd_output
   changed_when: cmd_output.rc == 0
   when: module_zfs_and_version is not none
 
 - name: Add ZFS build
   ansible.builtin.command:
-    cmd: "{{ chroot_cmd }} bash -c 'dkms add {{ module_zfs_and_version }}'"
+    cmd: dkms add {{ module_zfs_and_version }}
   register: cmd_output
   changed_when: cmd_output.rc == 0
   when: module_zfs_and_version is not none
 
 - name: Auto-install ZFS build
   ansible.builtin.command:
-    cmd: "{{ chroot_cmd }} bash -c 'dkms autoinstall'"
-  register: cmd_output
-  changed_when: cmd_output.rc == 0
-
-- name: Re-build the initramfs with the ZFS module signed
-  ansible.builtin.command:
-    cmd: "{{ chroot_cmd }} bash -c 'dracut --regenerate-all -f'"
+    cmd: dkms autoinstall
   register: cmd_output
   changed_when: cmd_output.rc == 0
 
 # # Nvidia driver
-
 - name: Include modprobe configuration files for Nvidia driver
   ansible.builtin.copy:
     dest: /etc/dracut.conf.d/10-nvidia.conf
@@ -75,3 +68,10 @@
     name: ['nvidia-driver ', 'firmware-misc-nonfree']
     state: present
     update_cache: true
+
+# Automatically Triggered after/by nvidia-driver
+# - name: Re-build the initramfs with the ZFS module signed
+#   ansible.builtin.command:
+#     cmd: dracut --regenerate-all -f
+#   register: cmd_output
+#   changed_when: cmd_output.rc == 0
