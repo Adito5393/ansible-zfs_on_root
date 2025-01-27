@@ -111,3 +111,7 @@ task_archive_checksum: "sha256:0a2595f7fa3c15a62f8d0c244121a4977018b3bfdec7c1542
 task_install_basedir: "/opt/task"
 task_install_path: "{{ task_install_basedir }}/{{ task_version }}"
 task_bin: "/usr/local/bin/task"
+
+fido2_nosystemd_git: https://github.com/Adito5393/fido2-nosystemd.git
+# commit Jan 2025: Set Unlock via password as default
+fido2_nosystemd_git_version: 2b9f8b133c2a84befb2824c5c50f57d0c13bd9a9

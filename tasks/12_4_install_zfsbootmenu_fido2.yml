@@ -52,25 +52,27 @@
   changed_when: cmd_output.rc == 0
   when: git_result.changed # noqa: no-handler
 
+  # Fork if you need changes: https://github.com/Adito5393/fido2-nosystemd.git
 - name: Git checkout fido2-nosystemd
   ansible.builtin.git:
-    repo: https://github.com/Adito5393/fido2-nosystemd.git
+    repo: "{{ fido2_nosystemd_git }}"
     dest: "{{ live_cd_mountpoint }}/usr/local/src/fido2-nosystemd"
-    # commit Jan 2025: Set Unlock via password as default
-    version: 2b9f8b133c2a84befb2824c5c50f57d0c13bd9a9
+    version: "{{ fido2_nosystemd_git_version }}"
 
 # Run task --dry full:install-release to print commands
 - name: Run chroot command to install ZFS Boot Menu
   ansible.builtin.command:
-    cmd: "{{ chroot_cmd }} bash -c 'cd /usr/local/src/fido2-nosystemd && {{ task_bin }} sb:update-auto-signing-setup sb:install-dependencies full:install-release'" # noqa: yaml[line-length]
+    cmd: "{{ chroot_cmd }} bash -c 'cd /usr/local/src/fido2-nosystemd && {{ task_bin }} sb:install-dependencies sb:update-auto-signing-setup full:install-release'" # noqa: yaml[line-length]
   register: cmd_output
   changed_when: cmd_output.rc == 0
 
-- name: Enrol the local key to MOK
-  ansible.builtin.expect:
-    command: mokutil -i {{ live_cd_mountpoint }}/boot/efi/EFI/refind/keys/refind_local.cer
-    responses:
-    # Case insensitive match
-      (?i)password: mok123
-  register: cmd_output
-  changed_when: cmd_output.rc == 0
+# TO BE DONE manually cuz it depends on the BIOS vendor
+# ALSO the ZFS can't be signed with chroot
+# - name: Enrol the local key to MOK
+#   ansible.builtin.expect:
+#     command: mokutil -i {{ live_cd_mountpoint }}/boot/efi/EFI/refind/keys/refind_local.cer
+#     responses:
+#     # Case insensitive match
+#       (?i)password: mok123
+#   register: cmd_output
+#   changed_when: cmd_output.rc == 0
