@@ -1,12 +1,20 @@
-- name: Copy ZFS key to temporary and permanent locations
+- name: Copy ZFS key to primary permanent location
   ansible.builtin.copy:
     src: /etc/zfs/zroot.key
     remote_src: true
-    dest: "{{ item }}"
+    dest: "{{ live_cd_mountpoint }}/etc/zfs/keys/zroot.key"
     mode: "000"
-  with_items:
-    - "{{ live_cd_mountpoint }}/tmp/dir_luks2/zroot.key"
-    - "{{ live_cd_mountpoint }}/etc/zfs/keys/zroot.key"
+
+- name: Copy ZFS key to temporary locations for additional disks
+  ansible.builtin.copy:
+    src: /etc/zfs/zroot.key
+    remote_src: true
+    dest: "{{ live_cd_mountpoint }}/tmp/dir_luks2_{{ item_index }}/zroot.key"
+    mode: "000"
+  loop: "{{ disk_by_id[1:] }}"
+  loop_control:
+    index_var: item_index
+  when: disk_by_id | length | int > 1
 
 - name: Remove the zfs key password
   ansible.builtin.file:

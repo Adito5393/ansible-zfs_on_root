@@ -1,42 +1,34 @@
-# [ Setup Boot Partition for  2x disk setups ]###############
-- name: Create Luks2 Partition Mirror 2x drives
-  when:
-    - ansible_nodename != "localhost"
-    - disk_by_id | length | int == 2
-  tags:
-    - config_luk2_mirror2
-  block:
-    - name: Install cryptsetup required by LUKS2 usage
-      ansible.builtin.apt:
-        name: [cryptsetup]
-        state: present
-        update_cache: true
-        cache_valid_time: 3600
+- name: Install cryptsetup required by LUKS2 usage
+  ansible.builtin.apt:
+    name: [cryptsetup]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
 
-    - name: Format to LUKS2 with same password
-      ansible.builtin.shell:
-        cmd: >
-          set -o pipefail &&
-          echo -n "{{ luks2_password }}" |
-          cryptsetup luksFormat --type luks2 {{ item }}-part{{ luks_partition }} -
-        executable: /bin/bash
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
-      loop:
-        "{{ disk_by_id }}"
+- name: Format to LUKS2 with same password
+  ansible.builtin.shell:
+    cmd: >
+      set -o pipefail &&
+      echo -n "{{ luks2_password }}" |
+      cryptsetup luksFormat --type luks2 {{ item }}-part{{ luks_partition }} -
+    executable: /bin/bash
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  loop:
+    "{{ disk_by_id }}"
 
-    # Also possible: echo -n "This is pass1" | cryptsetup luksOpen /dev/sdb2 KEYSTORE0 -
-    - name: Unlock the LUKS2 partitions and map them
-      ansible.builtin.expect:
-        command: cryptsetup luksOpen {{ item }}-part{{ luks_partition }} KEYSTORE{{ index }}
-        responses:
-          passphrase: "{{ luks2_password }}"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
-      loop:
-        "{{ disk_by_id }}"
-      loop_control:
-        index_var: index
+# Also possible: echo -n "This is pass1" | cryptsetup luksOpen /dev/sdb2 KEYSTORE0 -
+- name: Unlock the LUKS2 partitions and map them
+  ansible.builtin.expect:
+    command: cryptsetup luksOpen {{ item }}-part{{ luks_partition }} KEYSTORE{{ index }}
+    responses:
+      passphrase: "{{ luks2_password }}"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  loop:
+    "{{ disk_by_id }}"
+  loop_control:
+    index_var: index
 
 - name: Write zeros to the partition
   ansible.builtin.command:
@@ -60,14 +52,21 @@
   loop_control:
     index_var: index
 
-- name: Ensure directories for ZFS keys exist
+- name: Ensure primary directory for ZFS keys exists
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ live_cd_mountpoint }}/etc/zfs/keys"
     state: directory
     mode: "0755"
-  with_items:
-    - "{{ live_cd_mountpoint }}/etc/zfs/keys"
-    - "{{ live_cd_mountpoint }}/tmp/dir_luks2"
+
+- name: Ensure additional directories for ZFS keys exist
+  ansible.builtin.file:
+    path: "{{ live_cd_mountpoint }}/tmp/dir_luks2_{{ item_index }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ disk_by_id[1:] }}"
+  loop_control:
+    index_var: item_index
+  when: disk_by_id | length | int > 1
 
 # - name: Ensure directories for temporary mount exist for all drives
 #   ansible.builtin.command:
@@ -75,14 +74,21 @@
 #   register: cmd_output
 #   changed_when: cmd_output.rc == 0
 
-- name: Mount inside the chroot the LUKS2 partition
+- name: Mount primary LUKS2 partition inside the chroot
   ansible.builtin.command:
-    cmd: "{{ chroot_cmd }} bash -c 'mount /dev/mapper/{{ item }}'"
+    cmd: "{{ chroot_cmd }} bash -c 'mount /dev/mapper/KEYSTORE0 /etc/zfs/keys'"
   register: cmd_output
   changed_when: cmd_output.rc == 0
-  with_items:
-    - KEYSTORE0 /etc/zfs/keys
-    - KEYSTORE1 /tmp/dir_luks2
+
+- name: Mount additional LUKS2 partitions inside the chroot
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'mount /dev/mapper/KEYSTORE{{ item_index }} /tmp/dir_luks2_{{ item_index }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  loop: "{{ disk_by_id[1:] }}"
+  loop_control:
+    index_var: item_index
+  when: disk_by_id | length | int > 1
 
 # Generate a long passphrase & Save it to the ZFS encryption dataset
 - name: Generate and save the LUKS2 unlock key
