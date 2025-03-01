@@ -76,7 +76,7 @@
     # Maybe also amd64-microcode ?
     - name: Install the nvidia-driver package, plus the necessary firmware
       ansible.builtin.apt:
-        name: [nvidia-driver, firmware-misc-nonfree, firmware-amd-graphics]
+        name: [nvidia-driver, firmware-misc-nonfree, firmware-amd-graphics, systemd-timesyncd]
         state: present
         update_cache: true
 
