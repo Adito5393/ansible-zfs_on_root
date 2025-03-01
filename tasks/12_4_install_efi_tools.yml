@@ -7,7 +7,7 @@
     update_cache: true
     cache_valid_time: 3600
 
-- name: Run chroot command to download and install memtest86
+- name: Run chroot command to download and install memtest86 (incl. singing it)
   ansible.builtin.command:
     cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
   register: cmd_output
@@ -22,5 +22,26 @@
     - "losetup -P /dev/loop33 /tmp/memtest86/memtest86-usb.img"
     - "mount -o loop /dev/loop33p1 /tmp/memtest86/mnt"
     - "cp /tmp/memtest86/mnt/EFI/BOOT/BOOTX64.efi {{ efi_boot_path }}/tools/memtest86/memtest86.efi"
+    - >
+      sbsign --key /etc/refind.d/keys/refind_local.key --cert /etc/refind.d/keys/refind_local.crt
+      --output {{ efi_boot_path }}/tools/memtest86/memtest86.efi {{ efi_boot_path }}/tools/memtest86/memtest86.efi
     - "umount /tmp/memtest86/mnt"
     - "losetup -d /dev/loop33"
+
+- name: Download UEFI shell
+  ansible.builtin.get_url:
+    url: https://github.com/tianocore/edk2/raw/refs/heads/UDK2018/ShellBinPkg/UefiShell/X64/Shell.efi
+    dest: "{{ live_cd_mountpoint }}/{{ efi_boot_path }}/tools/shellx64.efi"
+    mode: "0644"
+    checksum: sha256:04c89f19efee2a22660fd4650ff9add88e962d102b1b713e535f4e32a07c5185
+  changed_when: false
+
+- name: Sign the UEFI shell
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - >
+      sbsign --key /etc/refind.d/keys/refind_local.key --cert /etc/refind.d/keys/refind_local.crt
+      --output {{ efi_boot_path }}/tools/shellx64.efi {{ efi_boot_path }}/tools/shellx64.efi
