@@ -42,6 +42,12 @@ Originally based on the [reefland's Ubuntu role](https://github.com/reefland/ans
 
 Future plans:
 
+* add tasks for QEMU VM easier testing:
+  * install qemu-guest-agent & enable & start
+  * add all my pub ssh keys to root
+* test the EFI enabled SB & registration of keys
+* remove ALL unused vars & docs
+* fix memtest not showing up on the refind menu
 * Add j2 template config (allow user to pass path to the j2 file relative to the playbook!) via `apt install debconf-utils` for:
   * `keyboard-configuration` default vars are:
 
