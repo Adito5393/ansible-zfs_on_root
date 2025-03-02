@@ -12,7 +12,7 @@ Originally based on the [reefland's Ubuntu role](https://github.com/reefland/ans
   * ZFSbootMenu provides menu driven roll-back to previous ZFS snapshots
   * Automatic snapshot creation upon apt/dpkg install or remove
 * No GRUB Boot Loader!
-* All ESP (boot) partitions are ~~`mdadm`~~ copied across all devices via [syncbootpart](https://github.com/medo64/SyncDiskPart)
+* All ESP (boot) partitions are ~~`mdadm`~~ copied across all devices via [syncbootpart](https://github.com/medo64/SyncDiskPart) (only installed if more than 1 disk is used)
 * No separation of `bpool` and `rpool` just a single `rpool` is needed
 * Predefine rules for ZFS `rpool` pools types (mirror, raidz1, raidz2, multiple mirror vdevs) based on number of devices available
 * ~~Swap partitions can be enabled~~

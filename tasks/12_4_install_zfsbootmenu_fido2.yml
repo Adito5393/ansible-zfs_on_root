@@ -20,7 +20,7 @@
           bsdextrautils \
           make
 
-- name: Install git
+- name: Ensure git is available outside the chroot
   ansible.builtin.apt:
     name: [git]
     state: present

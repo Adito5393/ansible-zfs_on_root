@@ -44,6 +44,7 @@
     # TODO use var  "{{ syncbootpart_deb_checksum }}"
     checksum: sha256:801b9789c92a818540d81398275e16369a2ec192a41deaf5ae986d3473889c3d
   changed_when: false
+  when: disk_by_id | length | int > 1
 
 - name: Install SyncDiskPart aka syncbootpart
   ansible.builtin.command:
@@ -52,8 +53,10 @@
   changed_when: cmd_output.rc == 0
   with_items:
     - DEBIAN_FRONTEND=noninteractive dpkg -i /tmp/syncbootpart_1.0.0_all.deb
+  when: disk_by_id | length | int > 1
 
 - name: Remove custom medo64 deb source
   ansible.builtin.file:
     path: "{{ live_cd_mountpoint }}/etc/apt/sources.list.d/medo64.list"
     state: absent
+  when: disk_by_id | length | int > 1
