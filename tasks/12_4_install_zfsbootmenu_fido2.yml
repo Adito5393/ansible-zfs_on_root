@@ -31,7 +31,7 @@
   ansible.builtin.git:
     repo: https://github.com/zbm-dev/zfsbootmenu.git
     dest: "{{ live_cd_mountpoint }}/usr/local/src/zfsbootmenu"
-    version: v2.3.0
+    version: v3.0.1
   register: git_result
 
 # Assign command-line arguments to be used when booting the final kernel
