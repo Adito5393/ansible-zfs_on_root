@@ -38,13 +38,14 @@
 
     - name: Add contrib non-free-firmware repositories into sources list
       ansible.builtin.apt_repository:
-        repo: deb http://deb.debian.org/debian/ {{ item.dists }} main contrib non-free-firmware
+        repo: deb http://{{ item.url }}/ {{ item.dists }} main contrib non-free-firmware
         state: present
         filename: debian-contrib
         update_cache: "{{ item.update_cache }}"
       loop:
-        - {dists: "{{ ansible_distribution_release }}", update_cache: false}
-        - {dists: "{{ ansible_distribution_release }}-updates", update_cache: true}
+        - {url: deb.debian.org/debian, dists: "{{ ansible_distribution_release }}", update_cache: false}
+        - {url: deb.debian.org/debian, dists: "{{ ansible_distribution_release }}-updates", update_cache: false}
+        - {url: security.debian.org/debian-security, dists: "{{ ansible_distribution_release }}-security", update_cache: true}
 
     - name: Install ZFS dep packages (assumes Live CD Environment) Debian
       ansible.builtin.apt:
@@ -60,8 +61,8 @@
       environment:
         DEBIAN_FRONTEND: noninteractive
 
-        # TODO check SB enable, because the module doesn't work with it enabled
-        # https://askubuntu.com/questions/1455528/modprobe-key-was-rejected-by-service-ubuntu-22-04-1-desktop-iso#1463702
+    # TODO check SB enable, because the module doesn't work with it enabled
+    # https://askubuntu.com/questions/1455528/modprobe-key-was-rejected-by-service-ubuntu-22-04-1-desktop-iso#1463702
     - name: Debian | enabling zfs module
       community.general.modprobe:
         name: zfs
