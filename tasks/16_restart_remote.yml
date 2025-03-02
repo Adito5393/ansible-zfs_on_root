@@ -3,6 +3,7 @@
 - name: First Reboot of Remote System Block
   tags:
     - reboot_remote
+    - molecule-notest
   block:
     - name: If root pool encryption, show reminder of passphrase
       ansible.builtin.pause:
