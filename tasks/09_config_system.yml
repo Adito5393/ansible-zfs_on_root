@@ -33,7 +33,7 @@
 
     - name: Clear the sources.list
       ansible.builtin.copy:
-        dest: /etc/apt/sources.list
+        dest: "{{ live_cd_mountpoint }}/etc/apt/sources.list"
         content: "# Use the /etc/apt/sources.list.d/"
         owner: root
         group: root
