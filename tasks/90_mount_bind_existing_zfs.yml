@@ -1,0 +1,75 @@
+# - name: Mount ZFS datasets
+#   # Set vars from role vars directory
+#   vars:
+#     live_cd_mountpoint: /mnt
+#     root_pool_dataset_path: "{{ root_pool_name }}/ROOT/{{ ansible_distribution }}"
+#     root_pool_home_dataset_path: "{{ root_pool_name }}/HOME"
+#   block:
+- name: Import ZFS dataset
+  ansible.builtin.command: "{{ item }}"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  loop:
+    # Forcing the import OR set your hostid: zgenhostid -f 0x00bab10c
+    - zpool import -f -N -R {{ live_cd_mountpoint }} {{ root_pool_name }}
+  loop_control:
+    label: "{{ item }}"
+
+- name: Install python3-pexpect required by ansible.builtin.expect module
+  ansible.builtin.apt:
+    name: [python3-pexpect]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Load the FS ZFS with Encryption
+  ansible.builtin.expect:
+    command: zfs load-key -L prompt {{ root_pool_name }}
+    responses:
+      passphrase: "{{ passphrase }}"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  when:
+    - root_pool_encryption | default(false)
+
+- name: Mount the Filesystem
+  ansible.builtin.command:
+    "{{ item }}"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - "zfs mount {{ root_pool_dataset_path }}"
+    - "zfs mount {{ root_pool_home_dataset_path }}/work"
+
+- name: Check mounts
+  ansible.builtin.shell:
+    cmd: set -o pipefail && mount | grep mnt
+    executable: /bin/bash
+  register: mount_output
+  changed_when: false
+
+- name: Print mount_output.stdout
+  ansible.builtin.debug:
+    var: mount_output.stdout
+
+- name: Assert the ZFS mounts are present
+  ansible.builtin.assert:
+    that:
+      - "root_pool_dataset_path + ' on /mnt' in mount_output.stdout"
+      - "'on /mnt/home type zfs' in mount_output.stdout"
+
+- name: Update device symlinks
+  ansible.builtin.command: udevadm trigger
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+
+- name: Binding virtual file systems
+  ansible.builtin.command:
+    cmd: "{{ item }}"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - "mount -t proc /proc {{ live_cd_mountpoint }}/proc"
+    - "mount -t sysfs sys  {{ live_cd_mountpoint }}/sys"
+    - "mount -B /dev  {{ live_cd_mountpoint }}/dev"
+    - "mount -t devpts pts {{ live_cd_mountpoint }}/dev/pts"
