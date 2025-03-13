@@ -41,7 +41,7 @@ root_pool_options:
   - "-O relatime=on"
   - "-O xattr=sa"
   - "-o compatibility=openzfs-2.1-linux"
-  # Research if I want this settings globally?
+  # atime=off Disabling access time updates reduces unnecessary writes
   - "-O atime=off"
   - "-O dnodesize=auto"
   - "-O normalization=formD"

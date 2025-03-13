@@ -14,7 +14,6 @@
   ansible.builtin.include_tasks: "{{ task_names }}"
   tags: ["always"]
   loop:
-    - 01_test_virtualbox.yml
     - 01_basic_checks.yml
     - 02_confirm_defaults.yml
     - 03_install_zfs_packages.yml
