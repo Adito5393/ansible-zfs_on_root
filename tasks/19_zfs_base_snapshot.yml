@@ -1,0 +1,31 @@
+- name: Update timezone setting
+  ansible.builtin.command:
+    cmd: timedatectl set-timezone {{ timezone_value }}
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+
+# [ Switch Log Compression to ZFS Compression ]############################
+- name: Locate Existing Log Files
+  ansible.builtin.find:
+    paths: /etc/logrotate.d
+    patterns: "*"
+  register: files_matched
+
+- name: Disable the log compression in each file so ZFS does the Log Compression
+  ansible.builtin.replace:
+    path: "{{ item.path }}"
+    regexp: (^|[^#y])(compress)
+    replace: '\1#\2'
+  with_items: "{{ files_matched.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+# [ Create System Snapshot Before Reboot ]#################################
+# If a base_install snapshot does not exist, create one
+- name: Create base_install snapshot
+  ansible.builtin.shell:
+    cmd: >
+      zfs get type {{ root_pool_dataset_path }}@base_install || zfs snapshot {{
+      root_pool_dataset_path }}@base_install
+  register: cmd_output
+  changed_when: cmd_output.rc == 0

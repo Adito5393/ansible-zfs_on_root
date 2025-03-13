@@ -1,0 +1,104 @@
+- name: Setup the snapPrepApt script
+  ansible.builtin.template:
+    src: snapPrepApt.j2
+    dest: /usr/local/sbin/snapPrepApt
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Setup the snapPrepApt script
+  ansible.builtin.blockinfile:
+    path: /etc/apt/apt.conf.d/00snapPrepApt
+    block: |
+      // Takes a snapshot of the system before package changes.
+      DPkg::Pre-Invoke {"[ -x /usr/local/sbin/snapPrepApt ] && /usr/local/sbin/snapPrepApt || true";};
+    create: true
+    mode: "0644"
+    marker: // {mark} ANSIBLE MANAGED BLOCK
+
+# Tested and new kernels never executed this script
+# https://forums.gentoo.org/viewtopic-p-8811914.html?sid=db099c1442f16942408ce103cabd8c00
+# - name: Create the kernel preinst.d dir
+#   ansible.builtin.file:
+#     name: /etc/kernel/preinst.d
+#     owner: root
+#     group: root
+#     recurse: false
+#     state: directory
+#     mode: "0755"
+
+# - name: Setup the snapPrepApt script
+#   ansible.builtin.blockinfile:
+#     path: /etc/kernel/preinst.d/00snapPrepApt
+#     block: |
+#       [ -x /usr/local/sbin/snapPrepApt ] && /usr/local/sbin/snapPrepApt || true
+#     create: true
+#     mode: "0755"
+
+- name: Git checkout zfs-prune-snapshots
+  ansible.builtin.git:
+    repo: https://github.com/bahamas10/zfs-prune-snapshots.git
+    dest: /usr/local/src/zfs-prune-snapshots
+    #  Jun 17, 2022: bump version in code
+    version: eb9351b711cba18ea114113e5cb8313b96e8afe1
+
+- name: Install make
+  ansible.builtin.package:
+    state: present
+    name:
+      - make
+
+- name: Install zfs-prune-snapshots
+  community.general.make:
+    chdir: /usr/local/src/zfs-prune-snapshots
+    target: install
+
+- name: Gather package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Ensure systemd-cron is available if cron isn't install already
+  ansible.builtin.package:
+    state: present
+    name: systemd-cron
+  when:
+    - not 'cron' in ansible_facts.packages
+    - not 'anacron' in ansible_facts.packages
+    - not 'bcron' in ansible_facts.packages
+
+- name: Create the zfs-prune-snapshots dir for logs
+  ansible.builtin.file:
+    name: /var/log/zfs-prune-snapshots
+    owner: root
+    group: root
+    recurse: false
+    state: directory
+    mode: "0755"
+
+- name: Log rotate zfs-prune-snapshots
+  ansible.builtin.blockinfile:
+    path: /etc/logrotate.d/zfs-prune-snapshots
+    block: |
+      /var/log/zfs-prune-snapshots/preApt-snapshots.log {
+        rotate 12
+        monthly
+        missingok
+        notifempty
+      }
+    create: true
+    mode: "0644"
+
+- name: Prune ZFS apt snapshots every day 10:05am
+  ansible.builtin.cron:
+    name: "{{ item.name }}"
+    minute: "5"
+    hour: "{{ item.hour }}"
+    day: "{{ item.day }}"
+    month: "{{ item.month }}"
+    weekday: "{{ item.weekday }}"
+    job: "{{ item.job }}"
+    user: root
+    # Commented out the cron_file so the jobs can be seen via: sudo crontab -l
+  with_items:
+    - {name: Prune ZFS apt snapshots, hour: "10", day: "*", month: "*", weekday: "*",
+       job: /usr/local/bin/zfs-prune-snapshots -s '_prepApt' 2w >> /var/log/zfs-prune-snapshots/preApt-snapshots.log 2>&1 }

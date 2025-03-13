@@ -1,6 +1,6 @@
-- name: Copy over ansible ssh key to chroot environment
+- name: Copy over ssh dir with authorized_keys to chroot environment
   ansible.builtin.copy: # noqa risky-file-permissions
-    src: "/root/.ssh"
+    src: /root/.ssh
     dest: "{{ live_cd_mountpoint }}/root/"
     owner: root
     group: root

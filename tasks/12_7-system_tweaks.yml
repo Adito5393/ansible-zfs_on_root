@@ -10,3 +10,55 @@
     - zpool-trim@.timer     # ZFS zpool trim service timer unit
     - zpool-scrub@.service  # ZFS zpool scrub service
     - zpool-scrub@.timer    # ZFS zpool scrub service timer unit
+
+- name: Enable ZFS Trim Services inside chroot # noqa: command-instead-of-module
+  ansible.builtin.shell: /usr/bin/systemctl enable {{ item }} --root={{ live_cd_mountpoint }}
+  args:
+    executable: /usr/bin/bash
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - zpool-trim@{{ root_pool_name }}.service
+    - zpool-trim@{{ root_pool_name }}.timer
+  when:
+    - zfs_pool_trim_systemd_service_enable | bool
+
+- name: Enable ZFS Scrub Service inside chroot # noqa: command-instead-of-module
+  ansible.builtin.shell: /usr/bin/systemctl enable {{ item }} --root={{ live_cd_mountpoint }}
+  args:
+    executable: /usr/bin/bash
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - zpool-scrub@{{ root_pool_name }}.service
+    - zpool-scrub@{{ root_pool_name }}.timer
+  when:
+    - zfs_pool_scrub_systemd_service_enable | bool
+
+- name: Disable zfs auto trim since it will be done via systemd
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - zpool set autotrim=off {{ root_pool_name }}
+  when:
+    - zfs_pool_trim_systemd_service_enable | bool
+
+# Using shell due to issue: https://github.com/ansible/ansible/issues/21026
+# Tried the module, still gives: Ignoring "arguments" as it is not used in "systemd"
+- name: Enable zfs-work-dir-mount service inside chroot # noqa: command-instead-of-module
+  ansible.builtin.shell: /usr/bin/systemctl enable zfs-work-dir-mount --root={{ live_cd_mountpoint }}
+  args:
+    executable: /usr/bin/bash
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+
+# Using shell due to issue: https://github.com/ansible/ansible/issues/21026
+# Tried the module, still gives: Ignoring "arguments" as it is not used in "systemd"
+- name: Enable zfs-work-dir-mount service inside chroot # noqa: command-instead-of-module
+  ansible.builtin.shell: /usr/bin/systemctl enable zfs-work-dir-mount --root={{ live_cd_mountpoint }}
+  args:
+    executable: /usr/bin/bash
+  register: cmd_output
+  changed_when: cmd_output.rc == 0

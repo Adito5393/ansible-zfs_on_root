@@ -27,6 +27,8 @@
 
             Make a snapshot after reboot: zfs snapshot {{ root_pool_dataset_path }}@base_install
 
+            You can ssh as root using the same ssh key!
+
           Press ENTER to reboot {{ (ansible_ssh_host | default(ansible_host)) | default(inventory_hostname) }}
       when:
         - root_pool_encryption | default(false) | bool

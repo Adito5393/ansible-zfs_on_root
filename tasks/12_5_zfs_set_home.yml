@@ -6,3 +6,12 @@
     owner: root
     group: root
     mode: '0644'
+
+# Using shell due to issue: https://github.com/ansible/ansible/issues/21026
+# Tried the module, still gives: Ignoring "arguments" as it is not used in "systemd"
+- name: Enable zfs-work-dir-mount service inside chroot # noqa: command-instead-of-module
+  ansible.builtin.shell: /usr/bin/systemctl enable zfs-work-dir-mount --root={{ live_cd_mountpoint }}
+  args:
+    executable: /usr/bin/bash
+  register: cmd_output
+  changed_when: cmd_output.rc == 0

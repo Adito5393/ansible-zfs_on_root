@@ -1,0 +1,7 @@
+{% raw %}
+DATE="$( /bin/date +%F-%T )"
+# FYI a user helpfully notes there may be some issue with snapshot-ing a bpool and GRUB
+# See: https://github.com/kimono-koans/httm/issues/11#issuecomment-1860329869
+{% endraw %}
+
+{{ base_snap_prep_apt }}
