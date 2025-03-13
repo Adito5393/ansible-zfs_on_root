@@ -6,23 +6,14 @@
 # Release name bookworm & Debian
 distro_release: "{{ ansible_distribution_release }}"
 distro_name: "{{ ansible_distribution }}"
-ubuntu_version: "22.04"
 
 # Define Partition Mapping
 boot_partition: "1"
-swap_partition: "4"
 luks_partition: "2"
 root_partition: "3"
 
-# Define EFI System Partition (ESP) Size in MB
-boot_partition_size_mb: "512"
-
 # Removing the -A1:set:2 ... marks partition #1 as “legacy BIOS bootable.”
-uefi_partition_flags: "-n {{ boot_partition }}:1M:+{{ boot_partition_size_mb }}M -c {{ boot_partition }}:EFI -t {{ boot_partition }}:EF00"
-
-# Possible SWAP Partition Flags based on one device or more
-single_disk_or_mirror_swap_flags: "-n{{ swap_partition }}:0:+{{ single_or_mirror_swap_partition_size_mb }}M -t{{ swap_partition }}:8200"
-raidz_multi_disk_swap_flags: "-n{{ swap_partition }}:0:+{{ raidz_swap_partition_size_mb }}M -t{{ swap_partition }}:FD00"
+uefi_partition_flags: "-n {{ boot_partition }}:1M:+{{ boot_partition_size_mb }} -c {{ boot_partition }}:EFI -t {{ boot_partition }}:EF00"
 
 # LUKS partition for ZFS keys
 luks_partition_flags: -n {{ luks_partition }}:0:+1G -c {{ luks_partition }}:KEYSTORE -t {{ luks_partition }}:8309
@@ -94,61 +85,28 @@ datasets_to_create:
 # [ Variable below are unrelated to ZFS ]######################################
 
 # Define mount location within LIVE CD
-live_cd_mountpoint: "/mnt"
+live_cd_mountpoint: /mnt
 
 # Define chroot command to use
-chroot_cmd: "chroot {{ live_cd_mountpoint }}"
+chroot_cmd: chroot {{ live_cd_mountpoint }}
 
 # EFI Boot Mountpoint
-efi_boot_mountpoint: "/boot/efi"
+efi_boot_mountpoint: /boot/efi
 
 # Path for EFI directory
 efi_boot_path: "{{ efi_boot_mountpoint }}/EFI"
 
-# Path for ZFSBootMenu
-zfs_boot_menu_path: "{{ efi_boot_path }}/zfsbootmenu"
-
-# Path for rEFInd
-refind_path: "{{ efi_boot_path }}/refind"
-
-# efi pathname for rEFInd within startup.nsh file (reversed slashes expected)
-refind_efi_pathname: 'EFI\refind\refind_x64.efi'
-
-# Path for syslinx BIOS bootloader
-syslinx_path: "{{ efi_boot_mountpoint }}/syslinux"
-
-# OS Prober is only needed on dual-boot configurations.
-remove_os_prober: true
-
-# Packages required to be held (not installed or updated) that conflict with
-# Dract and or rEFInd Packages
-packages_to_mark_hold:
-  - "zfs-initramfs"
-  - "initramfs-tools"
-  - "grub-efi-amd64"
-  - "grub-efi-amd64-signed"
-  - "grub-efi-amd64-bin"
-  - "grub-common"
-  - "grub2-common"
-  - "lilo"
-
 # Directory to check that UEFI firmware is available
 # This is required to be found if UEFI support is enabled
-efi_firmware_path: "/sys/firmware/efi"
-
-# Location of sudoers include file which contains: ansible ALL=(ALL) NOPASSWD:ALL
-sudoers_include_file: "/etc/sudoers.d/99_sudo_include_file"
-
-# Name of SSH Installation Helper Script (to remove if found)
-ssh_installation_helper_script: "do_ssh.sh"
+efi_firmware_path: /sys/firmware/efi
 
 # Comma Separated Device Number to include as possible "disk" devices
 # 8=[SATA, SCSI], 179=[MMC], 259=[NVMe]
-lsblk_device_types: "8,179,259"
+lsblk_device_types: 8,179,259
 
 # "lsblk -ndo name,mountpoint --include {{lsblk_device_types}} | grep -v '/' | cat"
 # The RO indicates if device is read-only (value 1), the awk filters to value 0 - not read-only
-lsblk_device_command: "lsblk -ndo name,mountpoint,ro --include {{ lsblk_device_types }} | awk '/0$/{print $1}'"
+lsblk_device_command: lsblk -ndo name,mountpoint,ro --include {{ lsblk_device_types }} | awk '/0$/{print $1}'
 
 # This version shows a little more information during manual install selection
-lsblk_device_detail_command: "lsblk -ndo name,size,mountpoint,ro --include {{ lsblk_device_types }} | awk '/0$/{printf \"%-8s %8s\\n\", $1,$2}'"
+lsblk_device_detail_command: lsblk -ndo name,size,mountpoint,ro --include {{ lsblk_device_types }} | awk '/0$/{printf \"%-8s %8s\\n\", $1,$2}'

@@ -12,32 +12,19 @@ no_log_secrets: true
 # This is a temporary root password used during the build process.
 # Root password will be disabled during the final stages.
 # The non-root user account will have sudo privileges
-default_root_password: "change!me"
+default_root_password: change!me
 
 ###############################################################################
 # Computer Configuration Settings
 ###############################################################################
 # Default domain hosts will use if not defined in inventory file
-domain_name: "localdomain"
+domain_name: localdomain
 
 # Define the local pre-fix to enable in /etc/locale.gen
-locale_prefix: "en_US.UTF-8"
+locale_prefix: en_US.UTF-8
 
 # Define the timezone to be placed in /etc/timezone
-timezone_value: "America/New_York"
-
-###############################################################################
-# Swap Partition Settings
-###############################################################################
-# Create Swap Partitions
-enable_swap_partitions: false
-
-# Swap partition size when one or two devices are used
-single_or_mirror_swap_partition_size_mb: "4096"
-
-# Swap partition size, per device, when three or more devices are used.
-# Estimated size in MB is:  #devices-1 * size_MB
-raidz_swap_partition_size_mb: "1024"
+timezone_value: America/New_York
 
 ###############################################################################
 # Root Pool Settings
@@ -47,7 +34,7 @@ raidz_swap_partition_size_mb: "1024"
 root_pool_name: zroot
 
 # Define ZFS default compression to enable
-zfs_compression: "lz4"
+zfs_compression: lz4
 
 # The root pool by default will consume all remaining disk space on the devices
 # limited by the free space of the smallest device specified.  For example a
@@ -62,7 +49,10 @@ zfs_compression: "lz4"
 # "+256G" will create partition 256Gib in size
 # "-200M" will use all available space, minus 200Mib
 # "0" (zero) use all available space
-root_partition_size: "-10M"
+root_partition_size: -10M
+
+# Define EFI System Partition (ESP) Size in MB or use G for GB
+boot_partition_size_mb: 512M
 
 # Prompt for Native ZFS Encryption Passphrase.  if true, then prompt for
 # passphrase if not provided.
@@ -81,36 +71,36 @@ prompt_for_zfs_passphrase: false
 #  - NOTE: A raidz2 requires 4 or more devices.
 set_root_pool_type:
   1: ""         # single device
-  2: "mirror"
-  3: "raidz"
-  4: "mirror"
-  5: "raidz"
-  6: "mirror"
-  default: "raidz"
+  2: mirror
+  3: raidz
+  4: mirror
+  5: raidz
+  6: mirror
+  default: raidz
 
 # Define ZFS ashift value to use
 zfs_rpool_ashift: 12
 
 # Enable ZFS Pool Trim Service after creating
 # NOTE: false will create, just not enable by default.
-zfs_pool_trim_systemd_service_enable: false
+zfs_pool_trim_systemd_service_enable: true
 
 # Define ZFS Pool Trim Schedule (see systemd OnCalendar for valid options)
-zfs_pool_trim_systemd_oncalendar: "weekly"
+zfs_pool_trim_systemd_oncalendar: weekly
 
 # Enable ZFS Pool Scrub Service after creating
 # NOTE: false will create, just not enable by default.
-zfs_pool_scrub_systemd_service_enable: true
+zfs_pool_scrub_systemd_service_enable: false
 
 # Define ZFS Pool Trim Schedule (see systemd OnCalendar for valid options)
-zfs_pool_scrub_systemd_oncalendar: "monthly"
+zfs_pool_scrub_systemd_oncalendar: monthly
 
 task_version: 3.41.0
-task_download_url: "https://github.com/go-task/task/releases/download/v{{ task_version }}/task_linux_amd64.tar.gz"
-task_archive_checksum: "sha256:0a2595f7fa3c15a62f8d0c244121a4977018b3bfdec7c1542ac2a8cf079978b8"
-task_install_basedir: "/opt/task"
+task_download_url: https://github.com/go-task/task/releases/download/v{{ task_version }}/task_linux_amd64.tar.gz
+task_archive_checksum: sha256:0a2595f7fa3c15a62f8d0c244121a4977018b3bfdec7c1542ac2a8cf079978b8
+task_install_basedir: /opt/task
 task_install_path: "{{ task_install_basedir }}/{{ task_version }}"
-task_bin: "/usr/local/bin/task"
+task_bin: /usr/local/bin/task
 
 fido2_nosystemd_git: https://github.com/Adito5393/fido2-nosystemd.git
 # commit Jan 2025: Set Unlock via password as default
@@ -119,3 +109,9 @@ install_nvidia_driver: false
 
 # Must be network_manager or systemd_networkd
 network_backend: network_manager
+
+# If a literal dollar sign is needed inside var base_snap_prep_apt, use a double dollar sign ($$).
+base_snap_prep_apt: |
+  zfs snapshot {{ root_pool_name }}@snap_"$DATE"_prepApt
+  zfs snapshot -r {{ root_pool_dataset_path }}@snap_"$DATE"_prepApt
+  zfs snapshot -r {{ root_pool_home_dataset_path }}/work@snap_"$DATE"_prepApt

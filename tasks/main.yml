@@ -10,17 +10,6 @@
 # If the required "disk_devices", or "host_name" is not specified, you will be prompted to enter it.
 ######################################################################################################
 
-# [ Load up the secret files ]#####################################################################
-- name: Include Secret Files
-  ansible.builtin.include_vars: "{{ item }}"
-  tags: ["always"]
-  # Was introduced ONLY for SMTP msmtp-mailer Client https://galaxy.ansible.com/chriswayg/msmtp-mailer
-  # See https://github.com/reefland/ansible-zfs_on_root/commit/e74541a4c75e40dba041809ad563ec663755084e#diff-2ae05bbbcd423727412667df6e14fd4050f6a16d4530f37a3d22e54ba86a428eR145
-  when: msmtp.enabled | default(false) | bool
-  loop:
-    - secrets/main.yml
-  no_log: "{{ no_log_secrets | default(true) }}"
-
 - name: Include Task Files
   ansible.builtin.include_tasks: "{{ task_names }}"
   tags: ["always"]
