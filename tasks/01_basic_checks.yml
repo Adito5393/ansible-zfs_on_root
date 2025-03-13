@@ -316,3 +316,9 @@
   tags:
     - always
     - apply_apt_proxy
+
+- name: Validate network_backend variable
+  ansible.builtin.assert:
+    that:
+      - network_backend in ['network_manager', 'systemd_networkd']
+    fail_msg: "Invalid network_backend ({{ network_backend }}). Must be 'network_manager' or 'systemd_networkd'."

@@ -31,28 +31,6 @@
       loop_control:
         label: "{{ item }}.j2"
 
-    - name: Debug Show Network Adapter Name Detected
-      ansible.builtin.debug:
-        msg: "{{ ansible_default_ipv4.alias }}"
-      when:
-        - debug|default(false)
-
-    - name: Create netplan dir
-      ansible.builtin.file:
-        dest: "{{ live_cd_mountpoint }}/etc/netplan/"
-        state: directory
-        owner: root
-        group: root
-        mode: '0644'
-
-    - name: Copy netplan template to /mnt/etc/netplan/01-netcfg.yaml
-      ansible.builtin.template:
-        src: netplan.j2
-        dest: "{{ live_cd_mountpoint }}/etc/netplan/01-netcfg.yaml"
-        owner: root
-        group: root
-        mode: '0644'
-
     - name: Clear the sources.list
       ansible.builtin.copy:
         dest: /etc/apt/sources.list
@@ -136,5 +114,3 @@
         - "locale-gen --purge en_US.UTF-8 {{ locale_prefix }}"
         - "update-locale {{ locale_prefix }}"
         - "dpkg-reconfigure --frontend noninteractive locales tzdata keyboard-configuration console-setup"
-
-###############################################################################

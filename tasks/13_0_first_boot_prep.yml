@@ -11,3 +11,22 @@
     command: "{{ chroot_cmd }} bash -c 'passwd'"
     responses:
       (?i)password: "{{ default_root_password }}"
+
+- name: Install network management (recommended for laptops)
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+  with_items:
+    - >
+        apt-get --yes install \
+          network-manager \
+          wpasupplicant
+  when: network_backend == "network_manager"
+
+- name: Configure network using systemd-networkd
+  ansible.builtin.import_tasks: 13_00_systemd_networkd.yml
+  when:
+    - network_backend == "systemd_networkd"

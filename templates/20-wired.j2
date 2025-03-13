@@ -1,0 +1,9 @@
+[Match]
+# Name={{ ansible_default_ipv4.alias }}
+MACAddress={{ ansible_default_ipv4.macaddress }}
+
+[Network]
+# DHCP=yes
+# Static: in CIDR format
+Address={{ ansible_default_ipv4.address }}/{{ (ansible_default_ipv4.network + '/' + ansible_default_ipv4.netmask) | ansible.utils.ipaddr('prefix') }}
+Gateway={{ ansible_default_ipv4.gateway }}

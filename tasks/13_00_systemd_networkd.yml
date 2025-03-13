@@ -1,0 +1,35 @@
+- name: Debug Show ansible_default_ipv4 Detected
+  ansible.builtin.debug:
+    var: "{{ item }}"
+  when:
+    - debug|default(true)
+  loop:
+    - ansible_default_ipv4.alias
+    - ansible_default_ipv4.macaddress
+    - ansible_default_ipv4.address
+    - ansible_default_ipv4.gateway
+
+- name: Create systemd/network dir
+  ansible.builtin.file:
+    dest: "{{ live_cd_mountpoint }}/etc/systemd/network/"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Write the systemd-networkd network (dhcp bind to MAC)
+  ansible.builtin.template:
+    src: 20-wired.j2
+    dest: "{{ live_cd_mountpoint }}/etc/systemd/network/20-wired.network"
+    owner: root
+    group: root
+    mode: '0755'
+
+# Using shell due to issue: https://github.com/ansible/ansible/issues/21026
+# Tried the module, still gives: Ignoring "arguments" as it is not used in "systemd"
+- name: Enable systemd-networkd service inside chroot # noqa: command-instead-of-module
+  ansible.builtin.shell: /usr/bin/systemctl enable systemd-networkd --root={{ live_cd_mountpoint }}
+  args:
+    executable: /usr/bin/bash
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
