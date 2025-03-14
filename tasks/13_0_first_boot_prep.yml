@@ -30,3 +30,17 @@
   ansible.builtin.import_tasks: 13_00_systemd_networkd.yml
   when:
     - network_backend == "systemd_networkd"
+
+- name: Install systemd-timesyncd, firmware-misc-nonfree & openssh-server
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+  with_items:
+    - >
+        apt-get --yes install \
+          systemd-timesyncd \
+          firmware-misc-nonfree \
+          openssh-server
