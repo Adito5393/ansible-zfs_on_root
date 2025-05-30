@@ -103,8 +103,8 @@ task_install_path: "{{ task_install_basedir }}/{{ task_version }}"
 task_bin: /usr/local/bin/task
 
 fido2_nosystemd_git: https://github.com/Adito5393/fido2-nosystemd.git
-# commit Jan 2025: Set Unlock via password as default
-fido2_nosystemd_git_version: 2b9f8b133c2a84befb2824c5c50f57d0c13bd9a9
+# commit Mar 2025: Improve renaming the latest ZBM EFI file
+fido2_nosystemd_git_version: 719dff871056ce6c4f7d244bafddc44943a10e4a
 install_nvidia_driver: false
 
 # Must be network_manager or systemd_networkd
