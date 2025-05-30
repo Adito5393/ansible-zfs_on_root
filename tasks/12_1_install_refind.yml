@@ -35,6 +35,14 @@
   environment:
     DEBIAN_FRONTEND: noninteractive
 
+- name: Config Refind to skip all Windows partitions incl. the ESP partition
+  ansible.builtin.blockinfile:
+    path: "{{ live_cd_mountpoint }}{{ efi_boot_path }}/refind/refind.conf"
+    block: |
+      dont_scan_volumes "Windows RE Tools",Windows,SYSTEM
+      # Add bootorder option to all default options
+      showtools bootorder,shell,memtest,mok_tool,about,hidden_tags,shutdown,reboot,firmware,fwupdate
+
 # https://github.com/Adito5393/SyncDiskPart
 - name: Download SyncDiskPart
   ansible.builtin.get_url:
