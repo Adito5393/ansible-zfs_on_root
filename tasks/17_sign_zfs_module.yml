@@ -36,7 +36,7 @@
       ansible.builtin.copy:
         dest: /etc/dracut.conf.d/10-nvidia.conf
         content: |
-          install_items+=" /etc/modprobe.d/nvidia-blacklists-nouveau.conf /etc/modprobe.d/nvidia.conf /etc/modprobe.d/nvidia-options.conf "
+          install_items+=" /etc/modprobe.d/nvidia-options.conf "
           omit_dracutmodules+=" plymouth "
           omit_drivers+=" amdgpu "
         owner: root

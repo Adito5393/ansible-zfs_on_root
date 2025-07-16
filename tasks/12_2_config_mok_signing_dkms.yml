@@ -6,18 +6,27 @@
     - "{{ live_cd_mountpoint }}/var/lib/dkms/mok.key"
     - "{{ live_cd_mountpoint }}/var/lib/dkms/mok.pub"
 
-- name: Ensure mok_signing_key is configured
+- name: Add MOK DKMS config
+  ansible.builtin.copy:
+    dest: "{{ live_cd_mountpoint }}/etc/dkms/framework.conf.d/mok_refind_local.conf"
+    content: |
+        mok_signing_key="/etc/refind.d/keys/refind_local.key"
+        mok_certificate="/etc/refind.d/keys/refind_local.crt"
+    mode: "0644"
+    owner: root
+
+- name: Comment out mok_signing_key
   ansible.builtin.lineinfile:
     path: "{{ live_cd_mountpoint }}/etc/dkms/framework.conf"
     regexp: '^mok_signing_key='
-    line: 'mok_signing_key="/etc/refind.d/keys/refind_local.key"'
+    line: '# mok_signing_key="/etc/refind.d/keys/refind_local.key"'
     create: false
 
-- name: Ensure mok_certificate is configured
+- name: Comment out mok_certificate
   ansible.builtin.lineinfile:
     path: "{{ live_cd_mountpoint }}/etc/dkms/framework.conf"
     regexp: '^mok_certificate='
-    line: 'mok_certificate="/etc/refind.d/keys/refind_local.crt"'
+    line: '# mok_certificate="/etc/refind.d/keys/refind_local.crt"'
     create: false
 
 - name: Install refind
