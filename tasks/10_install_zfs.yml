@@ -18,7 +18,8 @@
       changed_when: cmd_output.rc == 0
       with_items:
         - apt-get -qq update
-        - apt-get install --yes --no-install-recommends software-properties-common debconf-utils zstd
+        # software-properties-common is not available in trixie!
+        - apt-get install --yes --no-install-recommends debconf-utils zstd
         # - apt-get install --yes --no-install-recommends linux-headers-$(uname -r) # Already part of linux-headers-amd64?
         - DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends linux-headers-amd64 linux-image-amd64 zfs-dkms zfsutils-linux
         - apt-get install --yes --no-install-recommends dracut zfs-dracut dosfstools

@@ -62,3 +62,21 @@
     executable: /usr/bin/bash
   register: cmd_output
   changed_when: cmd_output.rc == 0
+
+- name: Install systemd-zram-generator
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  with_items:
+    - apt-get install --yes --no-install-recommends systemd-zram-generator
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Install zram-generator.conf
+  ansible.builtin.template:
+    src: zram-generator.conf.j2
+    dest: "{{ live_cd_mountpoint }}/etc/systemd/zram-generator.conf"
+    owner: root
+    group: root
+    mode: '0644'

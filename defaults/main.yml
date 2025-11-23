@@ -115,3 +115,5 @@ base_snap_prep_apt: |
   zfs snapshot {{ root_pool_name }}@snap_"$DATE"_prepApt
   zfs snapshot -r {{ root_pool_dataset_path }}@snap_"$DATE"_prepApt
   zfs snapshot -r {{ root_pool_home_dataset_path }}/work@snap_"$DATE"_prepApt
+
+zram_size_gb: 4

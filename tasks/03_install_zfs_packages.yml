@@ -1,28 +1,18 @@
 # ##[ Install Packages Need to get Started ]####################################
-- name: Install Packages Need to get Started on Ubuntu
-  when: ansible_distribution == "Ubuntu"
-  tags:
-    - install-zfs-packages
-  block:
-    - name: Install ZFS packages (assumes Live CD Environment)
-      ansible.builtin.apt:
-        name: ['debootstrap', 'gdisk', 'zfs-initramfs', 'dosfstools', 'mdadm']
-        state: present
-        update_cache: true
-        cache_valid_time: 3600
-
-    - name: Stop ZED Service
-      ansible.builtin.systemd:
-        name: zed
-        enabled: true
-        state: stopped
-
-###############################################################################
 - name: Install Packages Need to get Started on Debian
   when: ansible_distribution == "Debian"
   tags:
     - install-zfs-packages
   block:
+    - name: Install gpg for apt_repository task
+      ansible.builtin.apt:
+        name: ['gpg']
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+
     - name: Remove default debian source list
       ansible.builtin.file:
         name: /etc/apt/sources.list.d/debian.sources

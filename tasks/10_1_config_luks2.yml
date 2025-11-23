@@ -1,6 +1,7 @@
+# systemd-cryptsetup used for dracut config
 - name: Install cryptsetup required by LUKS2 usage
   ansible.builtin.apt:
-    name: [cryptsetup]
+    name: [cryptsetup, systemd-cryptsetup]
     state: present
     update_cache: true
     cache_valid_time: 3600
@@ -95,12 +96,11 @@
   ansible.builtin.shell:
     cmd: >
         set -o pipefail &&
-        (tr -dc '[:alnum:]' </dev/urandom | head -c64) || true > {{ live_cd_mountpoint }}/etc/zfs/keystore-luks2.key &&
+        (tr -dc '[:alnum:]' </dev/urandom | head -c64) > {{ live_cd_mountpoint }}/etc/zfs/keystore-luks2.key || true &&
         chmod 600 {{ live_cd_mountpoint }}/etc/zfs/keystore-luks2.key
     creates: "{{ live_cd_mountpoint }}/etc/zfs/keystore-luks2.key"
     executable: /bin/bash
   register: cmd_output
-  changed_when: cmd_output.rc == 0
 
 - name: Add key to LUKS2 partitions
   ansible.builtin.expect:

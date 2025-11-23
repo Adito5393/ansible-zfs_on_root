@@ -58,6 +58,18 @@
         line: options nvidia-drm modeset=1
         create: false
 
+    # Fix known wayland + Nvidia issue:
+    # https://forum.endeavouros.com/t/just-installed-fedora-with-gnome-on-the-distro-tester/31590/16
+    # https://wiki.debian.org/NvidiaGraphicsDrivers#wayland-modesetting
+    # ln -s /dev/null /etc/udev/rules.d/61-gdm.rules
+    - name: Mask the GDM udev rule by linking it to /dev/null (Fix known wayland + Nvidia issue)
+      become: true
+      ansible.builtin.file:
+        dest: /etc/udev/rules.d/61-gdm.rules
+        src: /dev/null
+        state: link
+        force: true
+
 # Automatically Triggered after/by nvidia-driver
 - name: Re-build the initramfs with the ZFS module signed
   ansible.builtin.command:
