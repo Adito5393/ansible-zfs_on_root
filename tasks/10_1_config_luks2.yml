@@ -6,6 +6,14 @@
     update_cache: true
     cache_valid_time: 3600
 
+- name: Install cryptsetup required by LUKS2 usage (chroot)
+  ansible.builtin.command:
+    cmd: "{{ chroot_cmd }} bash -c 'apt-get install --yes --no-install-recommends cryptsetup systemd-cryptsetup'"
+  register: cmd_output
+  changed_when: cmd_output.rc == 0
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
 - name: Format to LUKS2 with same password
   ansible.builtin.shell:
     cmd: >
