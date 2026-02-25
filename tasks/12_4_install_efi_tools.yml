@@ -1,11 +1,4 @@
 # Download and install memtest86
-# EFI version is latest v10, syslinux version is v4
-- name: Install unzip
-  ansible.builtin.apt:
-    name: unzip
-    state: present
-    update_cache: true
-    cache_valid_time: 3600
 
 - name: Run chroot command to download and install memtest86 (incl. singing it)
   ansible.builtin.command:
@@ -13,18 +6,18 @@
   register: cmd_output
   changed_when: cmd_output.rc == 0
   with_items:
-    - apt-get install unzip
+    - apt-get install unzip wget
     - "rm -rf /tmp/memtest86 && mkdir -p /tmp/memtest86/mnt"
-    - "mkdir -p {{ efi_boot_path }}/tools/memtest86"
-    - "curl -L https://www.memtest86.com/downloads/memtest86-usb.zip -o /tmp/memtest86/memtest86-usb.zip"
+    - "mkdir -p {{ efi_boot_path }}/tools"
+    - "wget -O /tmp/memtest86/memtest86-usb.zip https://www.memtest86.com/downloads/memtest86-usb.zip"
     # For EFI
     - "unzip -d /tmp/memtest86 /tmp/memtest86/memtest86-usb.zip memtest86-usb.img"
     - "losetup -P /dev/loop33 /tmp/memtest86/memtest86-usb.img"
     - "mount -o loop /dev/loop33p1 /tmp/memtest86/mnt"
-    - "cp /tmp/memtest86/mnt/EFI/BOOT/BOOTX64.efi {{ efi_boot_path }}/tools/memtest86/memtest86.efi"
+    - "cp /tmp/memtest86/mnt/EFI/BOOT/BOOTX64.efi {{ efi_boot_path }}/tools/memtest86.efi"
     - >
       sbsign --key /etc/refind.d/keys/refind_local.key --cert /etc/refind.d/keys/refind_local.crt
-      --output {{ efi_boot_path }}/tools/memtest86/memtest86.efi {{ efi_boot_path }}/tools/memtest86/memtest86.efi
+      --output {{ efi_boot_path }}/tools/memtest86.efi {{ efi_boot_path }}/tools/memtest86.efi
     - "umount /tmp/memtest86/mnt"
     - "losetup -d /dev/loop33"
 
